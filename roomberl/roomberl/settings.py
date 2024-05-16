@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'import_export',
     "corsheaders",
     "rest_framework_simplejwt",
+    "django_better_admin_arrayfield",
 
 
 
