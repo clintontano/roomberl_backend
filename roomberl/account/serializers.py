@@ -1,5 +1,5 @@
 from account.models import CustomPermission
-from account.models import User
+from account.models import User, UserAdditionalDetail
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.auth.password_validation import validate_password
@@ -210,3 +210,20 @@ class UserPasswordResetSerializer(serializers.Serializer):
             return attrs
         except DjangoUnicodeDecodeError:
             raise serializers.ValidationError("Token is not Valid or Expired")
+
+
+class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserAdditionalDetail
+        fields = "__all__"
+
+    def to_representation(self, instance: UserAdditionalDetail):
+
+        representation = super().to_representation(instance)
+
+        representation["user"] = UserAccountSerializer(
+            instance.user
+        ).data
+
+        return representation

@@ -1,4 +1,4 @@
-from account.models import User
+from account.models import User, UserAdditionalDetail
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -17,14 +17,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import GroupsSerializer
-from .serializers import PermissionSerializer
-from .serializers import SendPasswordResetEmailSerializer
-from .serializers import SimpleUserAccountSerializer
-from .serializers import UserAccountSerializer
-from .serializers import UserChangePasswordSerializer
-from .serializers import UserLoginSerializer
-from .serializers import UserPasswordResetSerializer
+from account.serializers import GroupsSerializer
+from account.serializers import PermissionSerializer
+from account.serializers import SendPasswordResetEmailSerializer, UserAdditionalDetailcSerializer
+from account.serializers import SimpleUserAccountSerializer
+from account.serializers import UserAccountSerializer
+from account.serializers import UserChangePasswordSerializer
+from account.serializers import UserLoginSerializer
+from account.serializers import UserPasswordResetSerializer
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
@@ -189,3 +189,9 @@ class VerifyEmailView(APIView):
         # send the user to front end 404  page if user not found
         front_end_404 = f"{settings.FRONTEND_URL}/404"
         return redirect(front_end_404)
+
+
+class UserAdditionalDetailView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserAdditionalDetailcSerializer
+    queryset = UserAdditionalDetail.objects.order_by('-updated_at')
