@@ -9,6 +9,7 @@ from account.serializers import UserAdditionalDetailcSerializer
 from account.serializers import UserChangePasswordSerializer
 from account.serializers import UserLoginSerializer
 from account.serializers import UserPasswordResetSerializer
+from account.service import find_matching_users
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -81,11 +82,10 @@ class CreateAccountAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        email = serializer.validated_data.get("email")
         password = serializer.validated_data.get("password")
-
-        user = User.objects.create_user(email=email, password=password)
+        user: User = serializer.save()
+        user.set_password(password)
+        user.save()
 
         user_serializer = SimpleUserAccountSerializer(user)
 
@@ -196,3 +196,19 @@ class UserAdditionalDetailView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAdditionalDetailcSerializer
     queryset = UserAdditionalDetail.objects.order_by("-updated_at")
+
+
+class ListMatchingUsersView(APIView):
+    def get(self, request, *args, **kwargs):
+        matching_users_dict = find_matching_users()
+        serialized_data = []
+
+        for _, data in matching_users_dict.items():
+            serialized_user = SimpleUserAccountSerializer(data["user"]).data
+            serialized_matches = SimpleUserAccountSerializer(
+                data["matches"], many=True
+            ).data
+            serialized_user["matches"] = serialized_matches
+            serialized_data.append(serialized_user)
+
+        return Response(serialized_data, status=status.HTTP_200_OK)

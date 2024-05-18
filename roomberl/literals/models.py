@@ -1,8 +1,7 @@
-from django.db import models
 from core.models import BaseModel
-# Create your models here.
+from django.db import models
 
-from django_better_admin_arrayfield.models.fields import ArrayField
+# Create your models here.
 
 
 class BaseLiterals(BaseModel):
@@ -17,4 +16,8 @@ class BaseLiterals(BaseModel):
 
 
 class University(BaseLiterals):
+    pass
+
+
+class RoomType(BaseLiterals):
     pass

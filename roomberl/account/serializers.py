@@ -1,26 +1,24 @@
 from account.models import CustomPermission
-from account.models import User, UserAdditionalDetail
+from account.models import User
+from account.models import UserAdditionalDetail
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.urls import reverse
 from django.utils.encoding import DjangoUnicodeDecodeError
-from django.utils.encoding import force_bytes
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
-from django.utils.http import urlsafe_base64_encode
 from rest_framework import serializers
+from room.serializers import RoomSerializer
 
 
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
         fields = "__all__"
-        extra_kwargs = {"id": {"read_only": True},
-                        "content_type": {"read_only": True}}
+        extra_kwargs = {"id": {"read_only": True}, "content_type": {"read_only": True}}
 
     def create(self, validated_data):
         content_type = ContentType.objects.get_for_model(CustomPermission).id
@@ -151,14 +149,14 @@ class SendPasswordResetEmailSerializer(serializers.Serializer):
         request = self.context.get("request")
 
         if User.objects.filter(email=email).exists():
-            user = User.objects.get(email=email)
-            uid = urlsafe_base64_encode(force_bytes(user.id))
-            token = PasswordResetTokenGenerator().make_token(user)
-            base_url = request.build_absolute_uri("/").rstrip("/")
+            # user = User.objects.get(email=email)
+            # uid = urlsafe_base64_encode(force_bytes(user.id))
+            # token = PasswordResetTokenGenerator().make_token(user)
+            request.build_absolute_uri("/").rstrip("/")
 
-            reset_password_link = (
-                reverse("account:reset-password") + f"?uid={uid}&token={token}"
-            )
+            # reset_password_link = (
+            #     reverse("account:reset-password") + f"?uid={uid}&token={token}"
+            # )
 
             # Send EMail
 
@@ -202,8 +200,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
             user = User.objects.get(id=user_id)
 
             if not PasswordResetTokenGenerator().check_token(user, token):
-                raise serializers.ValidationError(
-                    "Token is not Valid or Expired")
+                raise serializers.ValidationError("Token is not Valid or Expired")
 
             user.set_password(password)
             user.save()
@@ -213,17 +210,15 @@ class UserPasswordResetSerializer(serializers.Serializer):
 
 
 class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = UserAdditionalDetail
         fields = "__all__"
 
     def to_representation(self, instance: UserAdditionalDetail):
-
         representation = super().to_representation(instance)
 
-        representation["user"] = UserAccountSerializer(
-            instance.user
-        ).data
+        representation["user"] = UserAccountSerializer(instance.user).data
+
+        representation["rooms"] = RoomSerializer(instance.room).data
 
         return representation
