@@ -5,6 +5,7 @@ distlib==0.3.8
 Django==5.0.6
 django-better-admin-arrayfield==1.4.2
 django-cors-headers==4.3.1
+django-extensions==3.2.3
 django-filter==24.2
 django-import-export==4.0.1
 djangorestframework==3.15.1
