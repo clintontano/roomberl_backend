@@ -1,11 +1,20 @@
-from account.models import User, UserAdditionalDetail
+from account.models import User
+from account.models import UserAdditionalDetail
+from account.serializers import GroupsSerializer
+from account.serializers import PermissionSerializer
+from account.serializers import SendPasswordResetEmailSerializer
+from account.serializers import SimpleUserAccountSerializer
+from account.serializers import UserAccountSerializer
+from account.serializers import UserAdditionalDetailcSerializer
+from account.serializers import UserChangePasswordSerializer
+from account.serializers import UserLoginSerializer
+from account.serializers import UserPasswordResetSerializer
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.shortcuts import redirect
-from django.urls import reverse
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -16,15 +25,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from account.serializers import GroupsSerializer
-from account.serializers import PermissionSerializer
-from account.serializers import SendPasswordResetEmailSerializer, UserAdditionalDetailcSerializer
-from account.serializers import SimpleUserAccountSerializer
-from account.serializers import UserAccountSerializer
-from account.serializers import UserChangePasswordSerializer
-from account.serializers import UserLoginSerializer
-from account.serializers import UserPasswordResetSerializer
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
@@ -77,20 +77,7 @@ class UserAccountListCreateView(ListAPIView):
 
 class CreateAccountAPIView(CreateAPIView):
     serializer_class = UserAccountSerializer
-
-    def perform_create(self, serializer):
-        email = serializer.validated_data.get("email")
-        password = serializer.validated_data.get("password")
-
-        user = User.objects.create_user(email=email, password=password)
-
-        base_url = self.request.build_absolute_uri("/").rstrip("/")
-
-        account_verification_url = (
-            reverse("account:verify_email_view") + f"?user_id={user.id}"
-        )
-
-        return Response(status=status.HTTP_201_CREATED)
+    queryset = User.objects.order_by("email")
 
 
 class UserLoginView(CreateAPIView):
@@ -112,8 +99,7 @@ class UserLoginView(CreateAPIView):
             user_serializer = SimpleUserAccountSerializer(user)
 
             return Response(
-                {"token": get_tokens_for_user(
-                    user), "user": user_serializer.data},
+                {"token": get_tokens_for_user(user), "user": user_serializer.data},
                 status=status.HTTP_200_OK,
             )
 
@@ -194,4 +180,4 @@ class VerifyEmailView(APIView):
 class UserAdditionalDetailView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAdditionalDetailcSerializer
-    queryset = UserAdditionalDetail.objects.order_by('-updated_at')
+    queryset = UserAdditionalDetail.objects.order_by("-updated_at")
