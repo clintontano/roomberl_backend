@@ -77,7 +77,22 @@ class UserAccountListCreateView(ListAPIView):
 
 class CreateAccountAPIView(CreateAPIView):
     serializer_class = UserAccountSerializer
-    queryset = User.objects.order_by("email")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get("email")
+        password = serializer.validated_data.get("password")
+
+        user = User.objects.create_user(email=email, password=password)
+
+        user_serializer = SimpleUserAccountSerializer(user)
+
+        return Response(
+            {"user": user_serializer.data, "token": get_tokens_for_user(user)},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class UserLoginView(CreateAPIView):

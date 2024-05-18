@@ -1,12 +1,12 @@
 import uuid
 
+from core.models import BaseModel
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
-from core.models import BaseModel
 from literals.models import University
 
 
@@ -29,7 +29,7 @@ class UserManager(BaseUserManager):
         if not password:
             raise ValueError(_("The Password must be set"))
         email = self.normalize_email(email)
-        extra_fields.setdefault("is_active", False)
+        extra_fields.setdefault("is_active", True)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
@@ -65,8 +65,7 @@ class User(AbstractUser, PermissionsMixin):
         )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # noqa
-    username = models.CharField(
-        _("username"), max_length=255, blank=True, null=True)
+    username = models.CharField(_("username"), max_length=255, blank=True, null=True)
 
     email = models.EmailField(_("user email"), max_length=254, unique=True)
     mobile = models.CharField(_("mobile number"), max_length=20, blank=True)
@@ -114,3 +113,4 @@ class UserAdditionalDetail(BaseModel):
     pictur_of_ghana_card = models.ImageField(blank=True, null=True)
     student_id_number = models.CharField(max_length=20)
     date_of_admission = models.DateField()
+    responses = models.JSONField(default=dict, blank=True)
