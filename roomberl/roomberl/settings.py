@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "account",
     "literals",
     "question",
+    "room",
 ]
 
 MIDDLEWARE = [
@@ -167,3 +168,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
+
+
+FILEFIELD_MAX_LENGTH = 10000000

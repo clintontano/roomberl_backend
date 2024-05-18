@@ -52,6 +52,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser, PermissionsMixin):
     objects: UserManager = UserManager()
+    useradditionaldetail: "UserAdditionalDetail"
 
     class Gender:
         MALE = "Male"
@@ -76,7 +77,6 @@ class User(AbstractUser, PermissionsMixin):
     )
     image = models.ImageField(upload_to="users", blank=True, null=True)
 
-    additional_info = models.JSONField(default=dict)
     objects: UserManager = UserManager()
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
@@ -114,3 +114,6 @@ class UserAdditionalDetail(BaseModel):
     student_id_number = models.CharField(max_length=20)
     date_of_admission = models.DateField()
     responses = models.JSONField(default=dict, blank=True)
+    room = models.ForeignKey(
+        "room.room", null=True, on_delete=models.SET_NULL, blank=True
+    )
