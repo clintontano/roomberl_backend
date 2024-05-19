@@ -96,6 +96,9 @@ class User(AbstractUser, PermissionsMixin):
     def full_name(self):
         return self.__str__
 
+    class Meta:
+        unique_together = ["email", "hostel"]
+
 
 class CustomPermission(models.Model):
     """THIS IS A MODEL FOR CUSTOM PERMISSIONS BASED ON content_type"""

@@ -28,3 +28,10 @@ class ListAllLiteralsSerializer(serializers.Serializer):
 
     def get_years(self, obj):
         return Year.objects.values()
+
+
+class UnauthenticatedLiteralsSerializer(serializers.Serializer):
+    hostels = serializers.SerializerMethodField()
+
+    def get_hostels(self, obj: Hostel):
+        return Hostel.objects.values()
