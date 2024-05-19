@@ -1,7 +1,10 @@
+from account.filters import UserFilter
+from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
 from account.serializers import GroupsSerializer
 from account.serializers import PermissionSerializer
+from account.serializers import RoomPaymentSerializer
 from account.serializers import SendPasswordResetEmailSerializer
 from account.serializers import SimpleUserAccountSerializer
 from account.serializers import UserAccountSerializer
@@ -16,7 +19,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.shortcuts import redirect
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.generics import CreateAPIView
@@ -74,6 +79,16 @@ class UserAccountListCreateView(ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserAccountSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        hostel = self.request.query_params.get("hostel")
+
+        if not hostel:
+            raise serializers.ValidationError({"hostel": "This parameter is required."})
+        return queryset.filter(hostel=hostel)
 
 
 class CreateAccountAPIView(CreateAPIView):
@@ -212,3 +227,9 @@ class ListMatchingUsersView(APIView):
             serialized_data.append(serialized_user)
 
         return Response(serialized_data, status=status.HTTP_200_OK)
+
+
+class RoomPaymentApiView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoomPaymentSerializer
+    queryset = RoomPayment.objects.order_by("updated_at")

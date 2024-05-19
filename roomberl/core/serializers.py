@@ -1,3 +1,4 @@
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -18,3 +19,12 @@ class SoftDeleteMixin:
         instance.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BaseRoomBerlSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        exclude = [
+            "is_deleted",
+        ]
+        depth = 1

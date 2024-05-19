@@ -19,5 +19,17 @@ class University(BaseLiterals):
     pass
 
 
+class Hostel(BaseLiterals):
+    pass
+
+
+class Semester(BaseLiterals):
+    pass
+
+
+class Year(BaseLiterals):
+    pass
+
+
 class RoomType(BaseLiterals):
     pass

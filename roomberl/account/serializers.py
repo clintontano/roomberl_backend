@@ -1,6 +1,8 @@
 from account.models import CustomPermission
+from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
+from core.serializers import CreatedByMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.auth.password_validation import validate_password
@@ -11,6 +13,7 @@ from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
+from room.serializers import RoomPricingSerializer
 from room.serializers import RoomSerializer
 
 
@@ -64,6 +67,7 @@ class UserAccountSerializer(serializers.ModelSerializer):
             "password": {"write_only": True},
             "password2": {"write_only": True, "required": True},
             "is_superuser": {"read_only": True},
+            "hostel": {"required": True},
         }
 
     def validate(self, attrs):
@@ -94,6 +98,7 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "mobile",
             "address",
             "gender",
+            "hostel",
             "is_active",
         ]
 
@@ -212,7 +217,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
 class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAdditionalDetail
-        fields = "__all__"
+        fields = ["is_deleted"]
 
     def to_representation(self, instance: UserAdditionalDetail):
         representation = super().to_representation(instance)
@@ -220,5 +225,28 @@ class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
         representation["user"] = UserAccountSerializer(instance.user).data
 
         representation["rooms"] = RoomSerializer(instance.room).data
+        representation["room_payment"] = RoomPricingSerializer(
+            instance.user.roompayment_set, many=True
+        ).data
+
+        return representation
+
+
+class RoomPaymentSerializer(CreatedByMixin, serializers.ModelSerializer):
+    class Meta:
+        model = RoomPayment
+
+        exclude = ["is_deleted"]
+        read_only_fields = ["id", "created_by"]
+
+    def to_representation(self, instance: UserAdditionalDetail):
+        representation = super().to_representation(instance)
+
+        representation["user"] = UserAccountSerializer(instance.user).data
+
+        representation["rooms"] = RoomSerializer(instance.room).data
+        representation["room_payment"] = RoomPricingSerializer(
+            instance.user.roompayment_set, many=True
+        ).data
 
         return representation
