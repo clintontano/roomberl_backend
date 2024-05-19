@@ -8,7 +8,6 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
 from literals.models import Hostel
-from literals.models import University
 
 
 class UserManager(BaseUserManager):
@@ -96,6 +95,9 @@ class User(AbstractUser, PermissionsMixin):
     def full_name(self):
         return self.__str__
 
+    class Meta:
+        unique_together = ["email", "hostel"]
+
 
 class CustomPermission(models.Model):
     """THIS IS A MODEL FOR CUSTOM PERMISSIONS BASED ON content_type"""
@@ -106,12 +108,10 @@ class UserAdditionalDetail(BaseModel):
     other_name = models.CharField(max_length=200, null=True, blank=True)
     guardian_full_name = models.CharField(max_length=200)
     ghana_card_number = models.CharField(max_length=15, null=True, blank=True)
-    institution = models.ForeignKey(University, on_delete=models.PROTECT)
     course_of_study = models.CharField(max_length=200)
     profile_picture = models.ImageField(null=True, blank=True)
     admission_picture = models.ImageField(null=True, blank=True)
-    mobile_number = models.CharField(max_length=15)
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(null=True, blank=True)
     guardian_phone = models.CharField(max_length=15, blank=True, null=True)
     pictur_of_ghana_card = models.ImageField(blank=True, null=True)
     student_id_number = models.CharField(max_length=20)

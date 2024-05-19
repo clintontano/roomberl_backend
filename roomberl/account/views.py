@@ -208,7 +208,6 @@ class VerifyEmailView(APIView):
 
 
 class UserAdditionalDetailView(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
     serializer_class = UserAdditionalDetailcSerializer
     queryset = UserAdditionalDetail.objects.order_by("-updated_at")
 

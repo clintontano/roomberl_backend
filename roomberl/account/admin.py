@@ -45,5 +45,4 @@ class UserAdditionalDetailAdmin(admin.ModelAdmin):
         "other_name",
         "guardian_full_name",
         "ghana_card_number",
-        "institution",
     ]
