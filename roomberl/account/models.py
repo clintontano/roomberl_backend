@@ -7,6 +7,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
+from literals.models import Hostel
 from literals.models import University
 
 
@@ -53,6 +54,7 @@ class UserManager(BaseUserManager):
 class User(AbstractUser, PermissionsMixin):
     objects: UserManager = UserManager()
     useradditionaldetail: "UserAdditionalDetail"
+    roompayment_set: "RoomPayment"
 
     class Gender:
         MALE = "Male"
@@ -76,6 +78,7 @@ class User(AbstractUser, PermissionsMixin):
         max_length=10, choices=Gender.CHOICES, default=Gender.OTHER
     )
     image = models.ImageField(upload_to="users", blank=True, null=True)
+    hostel = models.ForeignKey(Hostel, on_delete=models.PROTECT, null=True)
 
     objects: UserManager = UserManager()
     USERNAME_FIELD = "email"
@@ -117,3 +120,10 @@ class UserAdditionalDetail(BaseModel):
     room = models.ForeignKey(
         "room.room", null=True, on_delete=models.SET_NULL, blank=True
     )
+
+
+class RoomPayment(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    room_pricing = models.ForeignKey("room.roompricing", on_delete=models.PROTECT)
+    amount_payed = models.DecimalField(max_digits=10, decimal_places=2)
+    note = models.TextField(blank=True)
