@@ -217,7 +217,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
 class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAdditionalDetail
-        fields = ["is_deleted"]
+        exclude = ["is_deleted"]
 
     def to_representation(self, instance: UserAdditionalDetail):
         representation = super().to_representation(instance)
