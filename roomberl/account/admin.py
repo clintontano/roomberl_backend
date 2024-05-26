@@ -1,6 +1,7 @@
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
+from core.admin import ImportExportModelAdmin
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
@@ -16,7 +17,7 @@ class RoomPaymentInline(admin.TabularInline):
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin, admin.ModelAdmin):
+class CustomUserAdmin(UserAdmin, ImportExportModelAdmin):
     list_display = ["email", "first_name", "last_name", "hostel"]
     list_editable = ["hostel"]
     add_fieldsets = (
