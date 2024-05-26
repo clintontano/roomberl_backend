@@ -218,8 +218,6 @@ class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
 
         exclude = ["is_deleted"]
 
-
-   
         read_only_fields = ["id"]
 
         extra_kwargs = {
@@ -242,3 +240,18 @@ class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSeri
 
         representation["room_payments"] = self.get_room_payments(instance)
         return representation
+
+    def update(self, instance: UserAdditionalDetail, validated_data: dict):
+        from room.models import RoomType
+
+        room_type: RoomType = validated_data.get("room_type", instance.room_type)
+
+        if room_type and room_type.current_occupancy() >= room_type.num_occupancy:
+            raise serializers.ValidationError("This room type is fully occupied.")
+
+        return super().update(instance, validated_data)
+
+    def validate_room_type(self, value):
+        if value and value.current_occupancy() >= value.num_occupancy:
+            raise serializers.ValidationError("This room type is fully occupied.")
+        return value

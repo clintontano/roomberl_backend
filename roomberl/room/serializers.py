@@ -24,6 +24,12 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
             "hostel": {"required": True},
         }
 
+    def to_representation(self, instance: RoomType):
+        representation = super().to_representation(instance)
+
+        representation["current_occupancy"] = instance.current_occupancy()
+        return representation
+
 
 class RoomImageSerializer(serializers.ModelSerializer):
     class Meta:

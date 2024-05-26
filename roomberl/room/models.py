@@ -1,3 +1,4 @@
+from account.models import UserAdditionalDetail
 from core.models import BaseModel
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -18,7 +19,11 @@ class RoomType(BaseModel):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     price = models.DecimalField(decimal_places=2, max_digits=10)
+    num_occupancy = models.PositiveSmallIntegerField(default=1)
     room_amenities = models.ManyToManyField(RoomAmenity, blank=True)
+
+    def current_occupancy(self):
+        return UserAdditionalDetail.objects.filter(room_type=self).count()
 
 
 class Room(BaseModel):
