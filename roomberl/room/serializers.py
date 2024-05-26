@@ -34,6 +34,19 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
         )
         return representation
 
+    def validate(self, data):
+        name = data.get("name")
+        hostel = data.get("hostel")
+
+        name_exist = RoomType.objects.filter(name=name, hostel=hostel).exists()
+
+        if self.context["request"].method == "POST" and name_exist:
+            raise serializers.ValidationError(
+                f"this room  type already exists in {hostel.name}"
+            )
+
+        return data
+
 
 class RoomImageSerializer(serializers.ModelSerializer):
     class Meta:

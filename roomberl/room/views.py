@@ -28,9 +28,11 @@ class RoomTypeApiView(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         hostel = self.request.query_params.get("hostel")
-        if not hostel:
+        if self.action == "list" and not hostel:
             raise serializers.ValidationError({"hostel": "This parameter is required."})
-        return queryset.filter(hostel=hostel)
+        if hostel:
+            queryset = queryset.filter(hostel=hostel)
+        return queryset
 
 
 class RoomApiView(viewsets.ModelViewSet):
@@ -43,6 +45,8 @@ class RoomApiView(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         hostel = self.request.query_params.get("hostel")
-        if not hostel:
+        if self.action == "list" and not hostel:
             raise serializers.ValidationError({"hostel": "This parameter is required."})
-        return queryset.filter(hostel=hostel)
+        if hostel:
+            queryset = queryset.filter(hostel=hostel)
+        return queryset
