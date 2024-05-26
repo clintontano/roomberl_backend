@@ -217,7 +217,10 @@ class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
         model = RoomPayment
 
         exclude = ["is_deleted"]
-        read_only_fields = ["id", "created_by"]
+
+
+   
+        read_only_fields = ["id"]
 
         extra_kwargs = {
             "pk": {"read_only": True},
