@@ -28,6 +28,10 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         representation["current_occupancy"] = instance.current_occupancy()
+
+        representation["is_full"] = (
+            instance.current_occupancy() >= instance.num_occupancy
+        )
         return representation
 
 
