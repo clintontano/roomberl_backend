@@ -1,10 +1,28 @@
-from core.serializers import BaseRoomBerlSerializer
+from core.serializers import BaseToRepresentation
 from core.serializers import CreatedByMixin
 from django.conf import settings
 from rest_framework import serializers
 from room.models import Room
+from room.models import RoomAmenity
 from room.models import RoomImage
-from room.models import RoomPricing
+from room.models import RoomType
+
+
+class RoomAmenitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomAmenity
+        exclude = ["is_deleted"]
+
+
+class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
+    class Meta:
+        model = RoomType
+        exclude = ["is_deleted"]
+
+        extra_kwargs = {
+            "pk": {"read_only": True},
+            "hostel": {"required": True},
+        }
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
@@ -13,7 +31,7 @@ class RoomImageSerializer(serializers.ModelSerializer):
         fields = ["id", "room", "image"]
 
 
-class RoomSerializer(CreatedByMixin, serializers.ModelSerializer):
+class RoomSerializer(CreatedByMixin, BaseToRepresentation, serializers.ModelSerializer):
     id = serializers.ReadOnlyField()  # noqa
     images = serializers.ListField(
         write_only=True,
@@ -55,28 +73,3 @@ class RoomSerializer(CreatedByMixin, serializers.ModelSerializer):
 
             if file_serializer.is_valid(raise_exception=True):
                 file_serializer.save()
-
-    def to_representation(self, instance: Room):
-        representation = super().to_representation(instance)
-
-        representation["images"] = RoomImageSerializer(
-            instance.roomimage_set, many=True
-        ).data
-
-        representation["roompricing"] = RoomPricingSerializer(
-            instance.roompricing_set, many=True
-        ).data
-
-        return representation
-
-
-class RoomPricingSerializer(CreatedByMixin, serializers.ModelSerializer):
-    class Meta:
-        model = RoomPricing
-        exclude = ["is_deleted"]
-        read_only_fields = ["id", "created_by"]
-
-    def to_representation(self, instance):
-        serializer = BaseRoomBerlSerializer(instance=instance)
-        serializer.Meta.model = instance.__class__
-        return serializer.data if instance else {}

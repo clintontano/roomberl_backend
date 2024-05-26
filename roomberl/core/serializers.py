@@ -28,3 +28,10 @@ class BaseRoomBerlSerializer(serializers.ModelSerializer):
             "is_deleted",
         ]
         depth = 1
+
+
+class BaseToRepresentation:
+    def to_representation(self, instance):
+        serializer = BaseRoomBerlSerializer(instance=instance)
+        serializer.Meta.model = instance.__class__
+        return serializer.data if instance else {}

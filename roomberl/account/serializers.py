@@ -2,7 +2,7 @@ from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
-from core.serializers import CreatedByMixin
+from core.serializers import BaseToRepresentation
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.auth.password_validation import validate_password
@@ -13,8 +13,6 @@ from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
-from room.serializers import RoomPricingSerializer
-from room.serializers import RoomSerializer
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -214,41 +212,33 @@ class UserPasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError("Token is not Valid or Expired")
 
 
-class UserAdditionalDetailcSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserAdditionalDetail
-
-        exclude = ["is_deleted"]
-
-
-    def to_representation(self, instance: UserAdditionalDetail):
-        representation = super().to_representation(instance)
-
-        representation["user"] = UserAccountSerializer(instance.user).data
-
-        representation["rooms"] = RoomSerializer(instance.room).data
-        representation["room_payment"] = RoomPricingSerializer(
-            instance.user.roompayment_set, many=True
-        ).data
-
-        return representation
-
-
-class RoomPaymentSerializer(CreatedByMixin, serializers.ModelSerializer):
+class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
     class Meta:
         model = RoomPayment
 
         exclude = ["is_deleted"]
-        read_only_fields = ["id", "created_by"]
+
+
+   
+        read_only_fields = ["id"]
+
+        extra_kwargs = {
+            "pk": {"read_only": True},
+            "room_type": {"required": True},
+        }
+
+
+class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSerializer):
+    class Meta:
+        model = UserAdditionalDetail
+        exclude = ["is_deleted"]
+
+    def get_room_payments(self, obj: UserAdditionalDetail):
+        room_payments = RoomPayment.objects.filter(user=obj.user)
+        return room_payments.values("amount_payed", "note", "room_type")
 
     def to_representation(self, instance: UserAdditionalDetail):
         representation = super().to_representation(instance)
 
-        representation["user"] = UserAccountSerializer(instance.user).data
-
-        representation["rooms"] = RoomSerializer(instance.room).data
-        representation["room_payment"] = RoomPricingSerializer(
-            instance.user.roompayment_set, many=True
-        ).data
-
+        representation["room_payments"] = self.get_room_payments(instance)
         return representation

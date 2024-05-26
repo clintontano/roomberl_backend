@@ -1,3 +1,4 @@
+from core.admin import ImportExportModelAdmin
 from django.contrib import admin
 from question.models import Category
 from question.models import Option
@@ -15,11 +16,16 @@ class QuestionInline(admin.TabularInline):
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ImportExportModelAdmin):
     inlines = [QuestionInline]
 
 
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
+class QuestionAdmin(ImportExportModelAdmin):
     list_display = ["text", "category"]
     inlines = [OptionInline]
+
+
+@admin.register(Option)
+class OptionAdmin(ImportExportModelAdmin):
+    pass

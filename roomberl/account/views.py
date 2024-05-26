@@ -8,7 +8,7 @@ from account.serializers import RoomPaymentSerializer
 from account.serializers import SendPasswordResetEmailSerializer
 from account.serializers import SimpleUserAccountSerializer
 from account.serializers import UserAccountSerializer
-from account.serializers import UserAdditionalDetailcSerializer
+from account.serializers import UserAdditionalDetailSerializer
 from account.serializers import UserChangePasswordSerializer
 from account.serializers import UserLoginSerializer
 from account.serializers import UserPasswordResetSerializer
@@ -208,7 +208,7 @@ class VerifyEmailView(APIView):
 
 
 class UserAdditionalDetailView(viewsets.ModelViewSet):
-    serializer_class = UserAdditionalDetailcSerializer
+    serializer_class = UserAdditionalDetailSerializer
     queryset = UserAdditionalDetail.objects.order_by("-updated_at")
 
 

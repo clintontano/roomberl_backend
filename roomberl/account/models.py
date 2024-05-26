@@ -120,10 +120,14 @@ class UserAdditionalDetail(BaseModel):
     room = models.ForeignKey(
         "room.room", null=True, on_delete=models.SET_NULL, blank=True
     )
+    room_type = models.ForeignKey(
+        "room.roomtype", on_delete=models.SET_NULL, blank=True, null=True
+    )
 
 
 class RoomPayment(BaseModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    room_pricing = models.ForeignKey("room.roompricing", on_delete=models.PROTECT)
+    room_type = models.ForeignKey("room.roomtype", on_delete=models.SET_NULL, null=True)
+
     amount_payed = models.DecimalField(max_digits=10, decimal_places=2)
     note = models.TextField(blank=True)
