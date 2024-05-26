@@ -3,11 +3,34 @@ from rest_framework import serializers
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from room.filters import RoomFilter
-from room.filters import RoomPricingFilter
+from room.filters import RoomTypeFilter
 from room.models import Room
-from room.models import RoomPricing
-from room.serializers import RoomPricingSerializer
+from room.models import RoomAmenity
+from room.models import RoomType
+from room.serializers import RoomAmenitySerializer
 from room.serializers import RoomSerializer
+from room.serializers import RoomTypeSerializer
+
+
+class RoomAmenityApiView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = RoomAmenity.objects.order_by("updated_at")
+    serializer_class = RoomAmenitySerializer
+
+
+class RoomTypeApiView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = RoomType.objects.order_by("updated_at")
+    serializer_class = RoomTypeSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RoomTypeFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        hostel = self.request.query_params.get("hostel")
+        if not hostel:
+            raise serializers.ValidationError({"hostel": "This parameter is required."})
+        return queryset.filter(hostel=hostel)
 
 
 class RoomApiView(viewsets.ModelViewSet):
@@ -23,11 +46,3 @@ class RoomApiView(viewsets.ModelViewSet):
         if not hostel:
             raise serializers.ValidationError({"hostel": "This parameter is required."})
         return queryset.filter(hostel=hostel)
-
-
-class RoomPricingSerializerView(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = RoomPricing.objects.order_by("updated_at")
-    serializer_class = RoomPricingSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = RoomPricingFilter

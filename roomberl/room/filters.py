@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 from room.models import Room
-from room.models import RoomPricing
+from room.models import RoomType
 
 
 class RoomFilter(filters.FilterSet):
@@ -11,18 +11,13 @@ class RoomFilter(filters.FilterSet):
             "hostel",
             "room_type",
             "code",
-            "floor_plane",
         ]
 
 
-class RoomPricingFilter(filters.FilterSet):
+class RoomTypeFilter(filters.FilterSet):
     class Meta:
-        model = RoomPricing
+        model = RoomType
         fields = [
             "id",
-            "room",
-            "semester",
-            "year",
-            "due_date",
-            "length_of_stay",
+            "hostel",
         ]
