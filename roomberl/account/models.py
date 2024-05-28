@@ -131,3 +131,6 @@ class RoomPayment(BaseModel):
 
     amount_payed = models.DecimalField(max_digits=10, decimal_places=2)
     note = models.TextField(blank=True)
+    first_receipt = models.ImageField(blank=True)
+    second_receipt = models.ImageField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
