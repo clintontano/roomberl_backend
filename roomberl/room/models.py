@@ -35,7 +35,6 @@ class Room(BaseModel):
     floor_plan = models.ImageField(upload_to="floor_plan", null=True)
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="room/%Y-%m-%d", null=True, blank=True)
     room_amenities = models.ManyToManyField(RoomAmenity, blank=True)
 
     def __str__(self) -> str:

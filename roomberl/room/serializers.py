@@ -73,6 +73,15 @@ class RoomSerializer(CreatedByMixin, BaseToRepresentation, serializers.ModelSeri
         exclude = ["is_deleted"]
         read_only_fields = ["id", "created_by"]
 
+        extra_kwargs = {
+            "floor_plan": {"required": True},
+        }
+
+    def get_images(self, obj: Room):
+        room_image = RoomImage.objects.filter(room=obj.id)
+
+        return RoomImageSerializer(room_image, many=True).data
+
     def create(self, validated_data):
         images = validated_data.pop("images", [])
 
@@ -96,3 +105,10 @@ class RoomSerializer(CreatedByMixin, BaseToRepresentation, serializers.ModelSeri
 
             if file_serializer.is_valid(raise_exception=True):
                 file_serializer.save()
+
+    def to_representation(self, instance: RoomType):
+        representation = super().to_representation(instance)
+
+        representation["images"] = self.get_images(instance)
+
+        return representation
