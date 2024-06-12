@@ -211,6 +211,13 @@ class UserAdditionalDetailView(viewsets.ModelViewSet):
     serializer_class = UserAdditionalDetailSerializer
     queryset = UserAdditionalDetail.objects.order_by("-updated_at")
 
+    def get_object(self):
+        user = self.request.parser_context.get("kwargs").get("pk")
+
+        user_additional_detail = UserAdditionalDetail.objects.filter(user=user).first()
+
+        return user_additional_detail
+
 
 class ListMatchingUsersView(APIView):
     def get(self, request, *args, **kwargs):
