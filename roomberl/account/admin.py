@@ -8,6 +8,9 @@ from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 
 
+admin.site.register(RoomPayment)
+
+
 class UserAdditionalDetailInine(admin.TabularInline):
     model = UserAdditionalDetail
 

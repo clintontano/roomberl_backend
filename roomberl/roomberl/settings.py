@@ -13,6 +13,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,10 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-+)13q-9205xpy!#3=@=q$07wn95((q7h2!!xyt&tl1d@o1(=!h"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
+DEBUG = config("DEBUG", default=False, cast=bool)
+
 
 ALLOWED_HOSTS = ["*"]
 
@@ -71,7 +75,7 @@ AUTH_USER_MODEL = "account.User"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "html")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -130,12 +134,14 @@ REST_FRAMEWORK = {
     ),
     "EXCEPTION_HANDLER": "core.utils.exception_handler.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+    "PAGE_SIZE": config("PAGE_SIZE", default=10),
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=config("ACCESS_TOKEN_LIFETIME", cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=config("REFRESH_TOKEN_LIFETIME", cast=int)
+    ),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -170,4 +176,16 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 
-FILEFIELD_MAX_LENGTH = 10000000
+FILEFIELD_MAX_LENGTH = config("FILEFIELD_MAX_LENGTH", cast=int, default=10000000)
+
+
+# Email Configuration
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+SERVER_EMAIL = config("DEFAULT_FROM_EMAIL")
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
