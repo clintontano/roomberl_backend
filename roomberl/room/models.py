@@ -25,6 +25,9 @@ class RoomType(BaseModel):
     def current_occupancy(self):
         return UserAdditionalDetail.objects.filter(room_type=self).count()
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Room(BaseModel):
     roomimage_set: "RoomImage"
