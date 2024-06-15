@@ -11,8 +11,10 @@ django-import-export==4.0.1
 djangorestframework==3.15.1
 djangorestframework-camel-case==1.4.2
 djangorestframework-simplejwt==5.3.1
+drf-extra-fields==3.7.0
 drf-yasg==1.21.7
 filelock==3.14.0
+filetype==1.2.0
 identify==2.5.36
 inflection==0.5.1
 nodeenv==1.8.0
@@ -22,6 +24,7 @@ platformdirs==4.2.2
 pre-commit==3.7.1
 psycopg2-binary==2.9.9
 PyJWT==2.8.0
+python-decouple==3.8
 pytz==2024.1
 PyYAML==6.0.1
 setuptools==69.5.1
