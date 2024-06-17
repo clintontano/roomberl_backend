@@ -233,7 +233,7 @@ class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSeri
 
     def get_room_payments(self, obj: UserAdditionalDetail):
         room_payments = RoomPayment.objects.filter(user=obj.user)
-        return room_payments.values("amount_payed", "note", "room_type")
+        return room_payments.values()
 
     def to_representation(self, instance: UserAdditionalDetail):
         representation = super().to_representation(instance)
