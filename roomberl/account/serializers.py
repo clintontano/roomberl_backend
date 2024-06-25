@@ -255,3 +255,9 @@ class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSeri
         if value and value.current_occupancy() >= value.num_occupancy:
             raise serializers.ValidationError("This room type is fully occupied.")
         return value
+
+
+class UserWithMatchesSerializer(serializers.Serializer):
+    id = serializers.UUIDField()  # noqa
+    user = SimpleUserAccountSerializer()
+    matches = SimpleUserAccountSerializer(many=True)

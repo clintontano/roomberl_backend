@@ -16,4 +16,7 @@ class BaseLiterals(BaseModel):
 
 
 class Hostel(BaseLiterals):
-    pass
+    owner_name = models.CharField(max_length=200, null=True)
+    owner_email = models.EmailField(null=True)
+    owner_phone = models.CharField(max_length=15, null=True)
+    location = models.CharField(max_length=200, null=True)

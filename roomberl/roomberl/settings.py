@@ -50,11 +50,13 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "django_better_admin_arrayfield",
     "django_extensions",
+    "mptt",
     # LOCAL
     "account",
     "literals",
     "question",
     "room",
+    # "comments",
 ]
 
 MIDDLEWARE = [

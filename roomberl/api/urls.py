@@ -8,4 +8,5 @@ urlpatterns = [
     path("accounts/", include("account.urls")),
     path("question/", include("question.urls")),
     path("room/", include("room.urls")),
+    # path("comments/", include("comments.urls")),
 ]

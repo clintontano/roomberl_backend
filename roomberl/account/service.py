@@ -1,4 +1,5 @@
 from account.models import User
+from django.http import Http404
 
 
 def extract_chosen_options(responses):
@@ -11,28 +12,34 @@ def extract_chosen_options(responses):
     return chosen_options
 
 
-def find_matching_users():
-    all_users = User.objects.exclude(useradditionaldetail__isnull=True)
-    matching_users_dict = {}
+def find_matching_users(current_user: User, hostel):
+    all_users: User = User.objects.filter(
+        useradditionaldetail__isnull=False, hostel=hostel
+    ).select_related("useradditionaldetail")
 
+    if (
+        not hasattr(current_user, "useradditionaldetail")
+        or current_user.useradditionaldetail is None
+    ):
+        raise Http404("%s does not have additional detail" % current_user)
+
+    current_user_responses = current_user.useradditionaldetail.responses
+    current_user_chosen_options = extract_chosen_options(current_user_responses)
+
+    user_chosen_options_map = {}
     for user in all_users:
         user: User
-        if hasattr(user, "useradditionaldetail"):
-            user_responses = user.useradditionaldetail.responses
-            user_chosen_options = extract_chosen_options(user_responses)
+        user_responses = user.useradditionaldetail.responses
+        user_chosen_options = extract_chosen_options(user_responses)
+        user_chosen_options_map[user.id] = user_chosen_options
+
+    matching_users_dict = {}
+    for user in all_users:
+        if user.id == current_user.id:
+            continue  # Skip comparing current_user with themselves
+
+        user_chosen_options = user_chosen_options_map[user.id]
+        if current_user_chosen_options.intersection(user_chosen_options):
             matching_users_dict[user.id] = {"user": user, "matches": []}
-
-            for other_user in all_users:
-                other_user: User
-                if other_user.id != user.id and hasattr(
-                    other_user, "useradditionaldetail"
-                ):
-                    other_user_responses = other_user.useradditionaldetail.responses
-                    other_user_chosen_options = extract_chosen_options(
-                        other_user_responses
-                    )
-
-                    if user_chosen_options.intersection(other_user_chosen_options):
-                        matching_users_dict[user.id]["matches"].append(other_user)
 
     return matching_users_dict

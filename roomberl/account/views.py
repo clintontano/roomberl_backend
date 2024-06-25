@@ -12,6 +12,7 @@ from account.serializers import UserAdditionalDetailSerializer
 from account.serializers import UserChangePasswordSerializer
 from account.serializers import UserLoginSerializer
 from account.serializers import UserPasswordResetSerializer
+from account.serializers import UserWithMatchesSerializer
 from account.service import find_matching_users
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -219,20 +220,23 @@ class UserAdditionalDetailView(viewsets.ModelViewSet):
         return user_additional_detail
 
 
-class ListMatchingUsersView(APIView):
-    def get(self, request, *args, **kwargs):
-        matching_users_dict = find_matching_users()
-        serialized_data = []
+class ListMatchingUsersView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserWithMatchesSerializer
 
-        for _, data in matching_users_dict.items():
-            serialized_user = SimpleUserAccountSerializer(data["user"]).data
-            serialized_matches = SimpleUserAccountSerializer(
-                data["matches"], many=True
-            ).data
-            serialized_user["matches"] = serialized_matches
-            serialized_data.append(serialized_user)
+    def get_queryset(self):
+        current_user: User = self.request.user
+        hostel = current_user.hostel
 
-        return Response(serialized_data, status=status.HTTP_200_OK)
+        matching_users_dict = find_matching_users(current_user, hostel)
+        return matching_users_dict.values()
+
+    def list(self, request, *args, **kwargs):  # noqa
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {"status": "success", "data": serializer.data}, status=status.HTTP_200_OK
+        )
 
 
 class RoomPaymentApiView(viewsets.ModelViewSet):

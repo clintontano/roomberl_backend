@@ -146,6 +146,22 @@ def send_payment_verification(sender, instance: RoomPayment, created, **kwargs):
     from core.dependency_injection import service_locator
 
     now = datetime.now()
+    hostel = instance.user.hostel
+    if created and hostel.owner_email:
+        service_locator.core_service.send_email(
+            subject="Payment Made",
+            template_path="emails/payment_created.html",
+            template_context={
+                "hostel_owner": hostel.owner_name,
+                "student": instance.user.full_name,
+                "room_type": instance.room_type.name,
+                "hostel": hostel.name,
+                "created_at": instance.created_at,
+                "amount_payed": instance.amount_payed,
+                "today": now.strftime("%A %B %d %I %p"),
+            },
+            to_emails=[hostel.owner_email],
+        )
 
     if instance.is_verified:
         service_locator.core_service.send_email(
@@ -154,7 +170,7 @@ def send_payment_verification(sender, instance: RoomPayment, created, **kwargs):
             template_context={
                 "student": instance.user.full_name,
                 "room_type": instance.room_type.name,
-                "hostel": instance.user.hostel.name,
+                "hostel": hostel.name,
                 "created_at": instance.created_at,
                 "amount_payed": instance.amount_payed,
                 "today": now.strftime("%A %B %d %I %p"),
