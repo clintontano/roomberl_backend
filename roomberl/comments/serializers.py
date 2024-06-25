@@ -21,7 +21,9 @@ class CommentSerializer(serializers.ModelSerializer):
 class CreateCommentSerializer(CreatedByMixin, serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = "__all__"
+        exclude = [
+            "is_deleted",
+        ]
         read_only_fields = ["id", "created_by"]
         extra_kwargs = {"content": {"required": True}}
 
@@ -44,6 +46,6 @@ class GetCommetsSerialiser(serializers.ModelSerializer):
         read_only_fields = ["id", "created_by"]
 
     def get_chats(self, obj: Comment):
-        root_chats = Comment.objects.filter(id=obj.id, parent=None)
+        root_chats = Comment.objects.filter(object_id=obj.object_id, parent=None)
 
         return CommentSerializer(root_chats, many=True).data

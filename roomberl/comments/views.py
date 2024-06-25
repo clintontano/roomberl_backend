@@ -16,3 +16,10 @@ class CommentApiView(viewsets.ModelViewSet):
             return CreateCommentSerializer
 
         return GetCommetsSerialiser
+
+    def get_object(self):
+        object_id = self.request.parser_context.get("kwargs").get("pk")
+
+        commets = Comment.objects.filter(object_id=object_id).first()
+
+        return commets

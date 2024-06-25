@@ -8,24 +8,39 @@ class SoftDeleteManager(models.Manager):
         return super().get_queryset().filter(is_deleted=False)
 
 
+class STATUS:
+    PENDING = "pending"
+    REJECTED = "rejected"
+    CLOSED = "closed"
+    ACTIVE = "active"
+    NOT_ACTIVE = "not_active"
+
+    ALL = (PENDING, REJECTED, CLOSED, ACTIVE)
+
+    CHOICES = (
+        (PENDING, ("Pending")),
+        (REJECTED, ("Rejected")),
+        (CLOSED, ("Closed")),
+        (ACTIVE, ("Active")),
+        (NOT_ACTIVE, ("Not Active")),
+    )
+
+
+class OBJECT_TYPE:
+    HOSTEL = "hostel"
+    USER = "user"
+
+    ALL = (HOSTEL, USER)
+
+    CHOICES = (
+        (HOSTEL, ("Hostel")),
+        (USER, ("User")),
+    )
+
+
 class BaseModel(models.Model):
-    class STATUS:
-        PENDING = "pending"
-        REJECTED = "rejected"
-        CLOSED = "closed"
-        ACTIVE = "active"
-        NOT_ACTIVE = "not_active"
-
-        ALL = (PENDING, REJECTED, CLOSED, ACTIVE)
-
-        CHOICES = (
-            (PENDING, ("Pending")),
-            (REJECTED, ("Rejected")),
-            (CLOSED, ("Closed")),
-            (ACTIVE, ("Active")),
-            (NOT_ACTIVE, ("Not Active")),
-        )
-
+    STATUS = STATUS
+    OBJECT_TYPE = OBJECT_TYPE
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # noqa
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
