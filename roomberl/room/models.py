@@ -33,6 +33,7 @@ class Room(BaseModel):
     roomimage_set: "RoomImage"
     hostel = models.ForeignKey(Hostel, on_delete=models.PROTECT)
     room_type = models.ForeignKey(RoomType, on_delete=models.PROTECT, null=True)
+    room_mates = models.ManyToManyField(get_user_model(), related_name="+", blank=True)
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=200, null=True, blank=True)
     floor_plan = models.ImageField(upload_to="floor_plan", null=True)

@@ -110,6 +110,7 @@ class CustomPermission(models.Model):
 class UserAdditionalDetail(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     other_name = models.CharField(max_length=200, null=True, blank=True)
+    nick_name= models.CharField(max_length=200, null=True, blank=True)
     guardian_full_name = models.CharField(max_length=200)
     ghana_card_number = models.CharField(max_length=15, null=True, blank=True)
     course_of_study = models.CharField(max_length=200)
