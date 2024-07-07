@@ -1,5 +1,4 @@
 from account.filters import UserFilter
-from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
@@ -20,7 +19,6 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
@@ -38,11 +36,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class PermissionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Permission.objects.exclude(name__icontains="custom permission").order_by(
+        "content_type"
+    )
+
     serializer_class = PermissionSerializer
-
-    content_type = ContentType.objects.get_for_model(CustomPermission).id
-
-    queryset = Permission.objects.filter(content_type=content_type).order_by("name")
 
 
 class GroupsViewSet(viewsets.ModelViewSet):
@@ -103,6 +101,7 @@ class CreateAccountAPIView(CreateAPIView):
         password = serializer.validated_data.get("password")
         user: User = serializer.save()
         user.set_password(password)
+        user.is_active = True
         user.save()
 
         user_serializer = SimpleUserAccountSerializer(user)

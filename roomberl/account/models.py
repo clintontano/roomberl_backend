@@ -4,6 +4,7 @@ from datetime import datetime
 from core.models import BaseModel
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.db import transaction
@@ -34,7 +35,7 @@ class UserManager(BaseUserManager):
             raise ValueError(_("The Password must be set"))
         email = self.normalize_email(email)
         extra_fields.setdefault("is_active", True)
-        user = self.model(email=email, **extra_fields)
+        user: User = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
         return user
@@ -70,6 +71,17 @@ class User(AbstractUser, PermissionsMixin):
             (OTHER, _("Other")),
         )
 
+    class UserGroup:
+        STUDENT = "Student"
+        HOSTEL_MANAGER = "Hostel_manager"
+        ADMINISTRATOR = "Administrator"
+
+        CHOICES = (
+            (STUDENT, _("Student")),
+            (HOSTEL_MANAGER, _("Hostel Manager")),
+            (ADMINISTRATOR, _("Administrator")),
+        )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # noqa
     username = models.CharField(_("username"), max_length=255, blank=True, null=True)
 
@@ -101,6 +113,16 @@ class User(AbstractUser, PermissionsMixin):
 
     class Meta:
         unique_together = ["email", "hostel"]
+
+
+@receiver(post_save, sender=User)
+def create_user_role(sender, instance: User, created, **kwargs):
+    group = Group.objects.filter(name=User.UserGroup.STUDENT).first()
+    if not group:
+        return
+
+    if not instance.groups.exists():
+        instance.groups.add(group)
 
 
 class CustomPermission(models.Model):
