@@ -16,7 +16,15 @@ class BaseLiterals(BaseModel):
 
 
 class Hostel(BaseLiterals):
+    code = models.CharField(max_length=200, null=True, blank=True, unique=True)
     owner_name = models.CharField(max_length=200, null=True)
     owner_email = models.EmailField(null=True)
     owner_phone = models.CharField(max_length=15, null=True)
     location = models.CharField(max_length=200, null=True)
+    website = models.URLField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        code = self.name.lower().replace(" ", "_")
+        self.code = code
+
+        return super().save()

@@ -1,4 +1,5 @@
 from django.urls import path
+from literals.views import HostelApiView
 from literals.views import ListLiteralsView
 from literals.views import UnauthenticatedListLiteralsView
 
@@ -11,4 +12,5 @@ urlpatterns = [
         UnauthenticatedListLiteralsView.as_view(),
         name="Unauthenticated",
     ),
+    path("hostel/<str:code>/", HostelApiView.as_view(), name="hostels"),
 ]

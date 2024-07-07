@@ -19,14 +19,18 @@ class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
         fields = "__all__"
-        extra_kwargs = {"id": {"read_only": True}, "content_type": {"read_only": True}}
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "content_type": {"read_only": True},
+            "codename": {"read_only": True},
+        }
 
     def create(self, validated_data):
         content_type = ContentType.objects.get_for_model(CustomPermission).id
 
         # Extract the name and codename from validated_data
         name = validated_data.get("name")
-        codename = validated_data.get("codename").lower()
+        codename = validated_data.get("name").lower()
 
         # Create a custom permission using the provided name and codename
         custom_permission = Permission.objects.create(

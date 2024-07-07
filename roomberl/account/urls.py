@@ -8,7 +8,7 @@ app_name = "account"
 
 router = routers.DefaultRouter()
 router.register("groups", views.GroupsViewSet, "groups")
-# router.register("permissions", views.PermissionViewSet, "permissions")
+router.register("permissions", views.PermissionViewSet, "permissions")
 router.register(
     "user-additional-detail", views.UserAdditionalDetailView, "user_additional_detail"
 )
