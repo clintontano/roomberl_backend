@@ -29,14 +29,21 @@ class UserManager(BaseUserManager):
         """
         Create and save a User with the given email and password.
         """
+
         if not email:
             raise ValueError(_("The Email must be set"))
         if not password:
             raise ValueError(_("The Password must be set"))
         email = self.normalize_email(email)
         extra_fields.setdefault("is_active", True)
+        groups = extra_fields.pop("groups", None)
+        user_permissions = extra_fields.pop("user_permissions", None)
         user: User = self.model(email=email, **extra_fields)
+        user.groups.set(groups)
+        user.user_permissions.set(user_permissions)
         user.set_password(password)
+        user.is_active = True
+
         user.save()
         return user
 
@@ -117,12 +124,13 @@ class User(AbstractUser, PermissionsMixin):
 
 @receiver(post_save, sender=User)
 def create_user_role(sender, instance: User, created, **kwargs):
-    group = Group.objects.filter(name=User.UserGroup.STUDENT).first()
-    if not group:
-        return
+    if created:
+        group = Group.objects.filter(name=User.UserGroup.STUDENT).first()
+        if not group:
+            return
 
-    if not instance.groups.exists():
-        instance.groups.add(group)
+        if not instance.groups.exists():
+            instance.groups.add(group)
 
 
 class CustomPermission(models.Model):
