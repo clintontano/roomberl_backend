@@ -1,4 +1,5 @@
 from account.filters import UserFilter
+from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
@@ -13,12 +14,12 @@ from account.serializers import UserChangePasswordSerializer
 from account.serializers import UserLoginSerializer
 from account.serializers import UserPasswordResetSerializer
 from account.serializers import UserWithMatchesSerializer
-from account.service import find_matching_users
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
@@ -36,7 +37,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class PermissionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Permission.objects.exclude(name__icontains="custom permission").order_by(
+    content_type = ContentType.objects.get_for_model(CustomPermission).id
+    queryset = Permission.objects.filter(content_type=content_type).order_by(
         "content_type"
     )
 
@@ -98,12 +100,12 @@ class CreateAccountAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        password = serializer.validated_data.get("password")
-        user: User = serializer.save()
-        user.set_password(password)
-        user.is_active = True
-        user.save()
 
+        validated_data = serializer.validated_data
+        password = validated_data.pop("password")
+        email = validated_data.pop("email")
+
+        user = User.objects.create_user(email, password, **validated_data)
         user_serializer = SimpleUserAccountSerializer(user)
 
         return Response(
@@ -226,17 +228,19 @@ class ListMatchingUsersView(ListAPIView):
     serializer_class = UserWithMatchesSerializer
 
     def get_queryset(self):
-        current_user: User = self.request.user
-        hostel = current_user.hostel
+        user: User = self.request.user
 
-        matching_users_dict = find_matching_users(current_user, hostel)
-        return matching_users_dict.values()
+        if not hasattr(user, "useradditionaldetail"):
+            raise serializers.ValidationError(
+                code="user_additional", detail="User does not have additional details"
+            )
 
-    def list(self, request, *args, **kwargs):  # noqa
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(
-            {"status": "success", "data": serializer.data}, status=status.HTTP_200_OK
+        return (
+            UserAdditionalDetail.objects.exclude(user=user)
+            .filter(
+                user__hostel=user.hostel, room_type=user.useradditionaldetail.room_type
+            )
+            .order_by("user")
         )
 
 
