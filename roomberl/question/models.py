@@ -12,6 +12,7 @@ class Category(BaseModel):
 class Question(BaseModel):
     text = models.TextField(max_length=255)
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
+    is_requied = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["created_at"]

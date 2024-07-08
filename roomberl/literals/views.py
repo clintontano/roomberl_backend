@@ -1,4 +1,3 @@
-from django.forms.models import model_to_dict
 from literals.api_docs import HOSTELS_SWAGGER_DOCS
 from literals.models import Hostel
 from literals.serializers import ListAllLiteralsSerializer
@@ -35,8 +34,6 @@ class HostelApiView(APIView):
             raise serializers.ValidationError(
                 code="hostel_code", detail="please provide hostel  code"
             )
-        instance = Hostel.objects.filter(code=code).first()
+        queryset = Hostel.objects.filter(code=code).values()
 
-        response = model_to_dict(instance) if instance else {}
-
-        return Response(response, status=status.HTTP_200_OK)
+        return Response(queryset, status=status.HTTP_200_OK)

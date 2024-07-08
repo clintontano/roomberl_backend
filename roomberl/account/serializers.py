@@ -2,6 +2,7 @@ from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
+from account.service import calculate_match_percentage
 from core.serializers import BaseToRepresentation
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
@@ -261,7 +262,38 @@ class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSeri
         return value
 
 
-class UserWithMatchesSerializer(serializers.Serializer):
-    id = serializers.UUIDField()  # noqa
-    user = SimpleUserAccountSerializer()
-    matches = SimpleUserAccountSerializer(many=True)
+class UserWithMatchesSerializer(serializers.ModelSerializer):
+    user = SimpleUserAccountSerializer(read_only=True)
+    match_percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserAdditionalDetail
+        fields = [
+            "id",
+            "user",
+            "match_percentage",
+            "nickname",
+            "course_of_study",
+            "profile_picture",
+            "date_of_admission",
+        ]
+
+    def get_match_percentage(self, obj: UserAdditionalDetail):
+        request = self.context.get("request")
+        logged_in_user: User = request.user
+
+        logged_in_user_detail = UserAdditionalDetail.objects.filter(
+            user=logged_in_user
+        ).first()
+
+        if (
+            not logged_in_user_detail
+            or not logged_in_user_detail.responses
+            or not obj.responses
+        ):
+            return "0%"
+
+        match_percentage = calculate_match_percentage(
+            logged_in_user_detail.responses, obj.responses
+        )
+        return f"{match_percentage:.1f}%"
