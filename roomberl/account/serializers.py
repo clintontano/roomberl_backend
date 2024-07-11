@@ -3,6 +3,7 @@ from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
 from account.service import calculate_match_percentage
+from core.serializers import BaseRoomBerlSerializer
 from core.serializers import BaseToRepresentation
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
@@ -91,6 +92,8 @@ class UserAccountSerializer(serializers.ModelSerializer):
 
 
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
+    additional_details = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -103,7 +106,17 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "gender",
             "hostel",
             "is_active",
+            "additional_details",
         ]
+
+    def get_additional_details(self, obj: User):
+        if not hasattr(obj, "useradditionaldetail"):
+            return
+        serializer = BaseRoomBerlSerializer(instance=obj.useradditionaldetail)
+        serializer.Meta.model = UserAdditionalDetail
+        serializer.Meta.depth = 3
+
+        return serializer.data
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
@@ -231,7 +244,7 @@ class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
         }
 
 
-class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSerializer):
+class UserAdditionalDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAdditionalDetail
         exclude = ["is_deleted"]
