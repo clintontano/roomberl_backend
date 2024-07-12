@@ -93,6 +93,7 @@ class UserAccountSerializer(serializers.ModelSerializer):
 
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
     additional_details = serializers.SerializerMethodField()
+    room_payments = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -107,7 +108,12 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "hostel",
             "is_active",
             "additional_details",
+            "room_payments",
         ]
+
+    def get_room_payments(self, obj: UserAdditionalDetail):
+        room_payments = RoomPayment.objects.filter(user=obj)
+        return room_payments.values()
 
     def get_additional_details(self, obj: User):
         if not hasattr(obj, "useradditionaldetail"):
