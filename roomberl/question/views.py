@@ -6,5 +6,5 @@ from rest_framework.generics import ListAPIView
 
 class CategoryApiView(ListAPIView):
     serializer_class = CategorySerializer
-    queryset = Category.objects.order_by("-updated_at")
+    queryset = Category.objects.order_by("created_at")
     pagination_class = None
