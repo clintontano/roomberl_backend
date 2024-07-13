@@ -5,7 +5,9 @@ def calculate_match_percentage(user1_responses, user2_responses):
     user2_responses_dict = {
         category["id"]: {
             question["id"]: {
-                option["text"] for option in question["option"] if option["chosen"]
+                option.get("text", option.get("id", ""))
+                for option in question["option"]
+                if option["chosen"]
             }
             for question in category["question"]
         }
@@ -19,7 +21,7 @@ def calculate_match_percentage(user1_responses, user2_responses):
                 question_id = question["id"]
                 if question_id in user2_responses_dict[category_id]:
                     user1_answers = {
-                        option["text"]
+                        option.get("text", option.get("id", ""))
                         for option in question["option"]
                         if option["chosen"]
                     }
