@@ -1,3 +1,4 @@
+from account.models import User
 from account.models import UserAdditionalDetail
 from core.models import BaseModel
 from django.contrib.auth import get_user_model
@@ -39,6 +40,7 @@ class Room(BaseModel):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     room_amenities = models.ManyToManyField(RoomAmenity, blank=True)
+    gender = models.CharField(max_length=20, choices=User.Gender.CHOICES, null=True)
 
     def __str__(self) -> str:
         return f"{self.name} {self.room_type.name}"

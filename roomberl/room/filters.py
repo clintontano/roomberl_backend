@@ -11,6 +11,7 @@ class RoomFilter(filters.FilterSet):
             "hostel",
             "room_type",
             "code",
+            "gender",
         ]
 
 

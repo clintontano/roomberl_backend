@@ -75,6 +75,7 @@ class RoomSerializer(CreatedByMixin, BaseToRepresentation, serializers.ModelSeri
 
         extra_kwargs = {
             "floor_plan": {"required": True},
+            "gender": {"required": True},
         }
 
     def get_images(self, obj: Room):
