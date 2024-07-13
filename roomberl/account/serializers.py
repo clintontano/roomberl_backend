@@ -3,7 +3,6 @@ from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
 from account.service import calculate_match_percentage
-from core.serializers import BaseRoomBerlSerializer
 from core.serializers import BaseToRepresentation
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
@@ -61,6 +60,7 @@ class GroupsSerializer(serializers.ModelSerializer):
 
 class UserAccountSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=False)
+    groups = GroupsSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -92,8 +92,7 @@ class UserAccountSerializer(serializers.ModelSerializer):
 
 
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
-    additional_details = serializers.SerializerMethodField()
-    room_payments = serializers.SerializerMethodField()
+    groups = GroupsSerializer(many=True)
 
     class Meta:
         model = User
@@ -107,22 +106,8 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "gender",
             "hostel",
             "is_active",
-            "additional_details",
-            "room_payments",
+            "groups",
         ]
-
-    def get_room_payments(self, obj: UserAdditionalDetail):
-        room_payments = RoomPayment.objects.filter(user=obj)
-        return room_payments.values()
-
-    def get_additional_details(self, obj: User):
-        if not hasattr(obj, "useradditionaldetail"):
-            return
-        serializer = BaseRoomBerlSerializer(instance=obj.useradditionaldetail)
-        serializer.Meta.model = UserAdditionalDetail
-        serializer.Meta.depth = 3
-
-        return serializer.data
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
