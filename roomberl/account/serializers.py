@@ -60,7 +60,7 @@ class GroupsSerializer(serializers.ModelSerializer):
 
 class UserAccountSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=False)
-    groups = GroupsSerializer(many=True, read_only=True)
+    groups_obj = GroupsSerializer(many=True, read_only=True, source="groups")
 
     class Meta:
         model = User
