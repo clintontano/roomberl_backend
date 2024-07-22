@@ -22,6 +22,7 @@ class Hostel(BaseLiterals):
     owner_phone = models.CharField(max_length=15, null=True)
     location = models.CharField(max_length=200, null=True)
     website = models.URLField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to="hostels")
 
     def save(self, *args, **kwargs):
         code = self.name.lower().replace(" ", "_")

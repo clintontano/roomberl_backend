@@ -13,6 +13,10 @@ class RoomAmenity(BaseModel):
     description = models.TextField(blank=True)
     logo = models.ImageField(blank=True, null=True, upload_to="room_amenities")
 
+    class Meta:
+        verbose_name = "Room Amenity"
+        verbose_name_plural = "Room Amenities"
+
 
 class RoomType(BaseModel):
     room_set: "Room"
