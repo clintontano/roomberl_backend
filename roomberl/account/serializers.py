@@ -110,6 +110,10 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserTokenSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
+
+
 class UserLoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255)
 

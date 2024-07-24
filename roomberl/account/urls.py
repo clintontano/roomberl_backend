@@ -49,6 +49,11 @@ urlpatterns = [
     path(
         "matching-users/", views.ListMatchingUsersView.as_view(), name="matching-users"
     ),
+    path(
+        "get-user-token/<uuid:user_id>/",
+        views.GetUserTokenByIDView.as_view(),
+        name="get-user-token",
+    ),
 ]
 
 urlpatterns += router.urls

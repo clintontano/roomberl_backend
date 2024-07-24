@@ -20,6 +20,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
@@ -28,6 +29,7 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import ListAPIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -111,6 +113,32 @@ class CreateAccountAPIView(CreateAPIView):
         return Response(
             {"user": user_serializer.data, "token": get_tokens_for_user(user)},
             status=status.HTTP_201_CREATED,
+        )
+
+
+class GetUserTokenByIDView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = SimpleUserAccountSerializer
+    lookup_field = "id"
+    lookup_url_kwarg = "user_id"
+
+    def retrieve(self, request, *args, **kwargs):
+        user_id = self.kwargs.get(
+            self.lookup_url_kwarg
+        ) or self.request.query_params.get(self.lookup_url_kwarg)
+
+        if not user_id:
+            return Response(
+                {self.lookup_url_kwarg: "This parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = get_object_or_404(self.queryset, **{self.lookup_field: user_id})
+        serializer = self.get_serializer(user)
+
+        return Response(
+            {"user": serializer.data, "token": get_tokens_for_user(user)},
+            status=status.HTTP_200_OK,
         )
 
 
