@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     "literals",
     "question",
     "room",
-    "comments",
+    "chats",
 ]
 
 MIDDLEWARE = [

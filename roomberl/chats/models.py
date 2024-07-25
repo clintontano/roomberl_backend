@@ -8,10 +8,20 @@ from mptt.models import TreeForeignKey
 # Create your models here.
 
 
-class Comment(BaseModel, MPTTModel):
+class Chat(BaseModel, MPTTModel):
     content = models.TextField(null=True)
     object_id = models.UUIDField()
     object_type = models.CharField(max_length=200, choices=OBJECT_TYPE.CHOICES)
+    sender = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="sent_chats"
+    )
+    receiver = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_chats",
+        null=True,
+        blank=True,
+    )
 
     parent = TreeForeignKey(
         "self",
@@ -20,14 +30,10 @@ class Comment(BaseModel, MPTTModel):
         blank=True,
         related_name="children",
     )
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class MPTTMeta:
         order_insertion_by = ["created_at"]
 
-    def __str__(self) -> str:
-        return self.content
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Call the super() save method first
-        # send email notification
+    @property
+    def is_group_chat(self):
+        return self.object_type in [OBJECT_TYPE.HOSTEL, OBJECT_TYPE.ROOM]

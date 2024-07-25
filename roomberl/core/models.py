@@ -29,12 +29,14 @@ class STATUS:
 class OBJECT_TYPE:
     HOSTEL = "hostel"
     USER = "user"
+    ROOM = "room"
 
-    ALL = (HOSTEL, USER)
+    ALL = (HOSTEL, USER, ROOM)
 
     CHOICES = (
         (HOSTEL, ("Hostel")),
         (USER, ("User")),
+        (ROOM, ("Room")),
     )
 
 

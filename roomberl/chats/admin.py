@@ -1,4 +1,4 @@
-from comments.models import Comment
+from chats.models import Chat
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 
@@ -8,9 +8,8 @@ from mptt.admin import MPTTModelAdmin
 class CustomMPTTModelAdmin(MPTTModelAdmin):
     list_display = [
         "content",
-        "created_by",
     ]
     mptt_level_indent = 30
 
 
-admin.site.register(Comment, CustomMPTTModelAdmin)
+admin.site.register(Chat, CustomMPTTModelAdmin)
