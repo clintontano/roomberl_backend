@@ -35,6 +35,7 @@ class ChatsSerializer(serializers.ModelSerializer):
 
 class ChatStartMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
     sender = serializers.SerializerMethodField()
+    room = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
@@ -54,6 +55,9 @@ class ChatStartMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
     def get_sender(self, obj: Chat):
         return SimpleUserAccountSerializer(obj.sender).data
 
+    def get_room(self, obj: Chat):
+        return ChatRoomSerializer(obj.room).data
+
 
 class CreateMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
     sender = serializers.SerializerMethodField()
@@ -71,11 +75,11 @@ class CreateMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
             "sender": {"read_only": True},
         }
 
-    def get_object_type(self, obj):
-        return obj.room.name.split("_")[0] if obj.room else None
+    def get_object_type(self, obj: Chat):
+        return obj.object_type
 
-    def get_object_id(self, obj):
-        return obj.room.name.split("_")[1] if obj.room else None
+    def get_object_id(self, obj: Chat):
+        return obj.object_id
 
     def get_sender(self, obj: Chat):
         return SimpleUserAccountSerializer(obj.sender).data
@@ -84,7 +88,6 @@ class CreateMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
 class GetChatsSerializer(serializers.ModelSerializer):
     room = ChatRoomSerializer()
     chats = serializers.SerializerMethodField()
-    # sender = SimpleUserAccountSerializer()
 
     class Meta:
         model = Chat

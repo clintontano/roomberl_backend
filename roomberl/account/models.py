@@ -36,11 +36,11 @@ class UserManager(BaseUserManager):
             raise ValueError(_("The Password must be set"))
         email = self.normalize_email(email)
         extra_fields.setdefault("is_active", True)
-        groups = extra_fields.pop("groups", None)
-        user_permissions = extra_fields.pop("user_permissions", None)
+        # groups = extra_fields.pop("groups", None)
+        # user_permissions = extra_fields.pop("user_permissions", None)
         user: User = self.model(email=email, **extra_fields)
-        user.groups.set(groups)
-        user.user_permissions.set(user_permissions)
+        # user.groups.set(groups)
+        # user.user_permissions.set(user_permissions)
         user.set_password(password)
         user.is_active = True
 

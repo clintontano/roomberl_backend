@@ -43,7 +43,8 @@ class ChatStartApiView(CreateAPIView):
         if not object_type or not object_id:
             raise ValidationError("Object type and object ID must be provided.")
 
-        room_name = f"{object_type}_{object_id}"
+        room_name = service_locator.chat_service.generate_chat_room_name
+
         room = service_locator.chat_service.get_or_create_room(
             user, room_name, object_type, object_id
         )
