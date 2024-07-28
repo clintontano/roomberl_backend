@@ -1,3 +1,4 @@
+# models.py
 from account.models import User
 from core.models import BaseModel
 from core.models import OBJECT_TYPE
@@ -5,22 +6,22 @@ from django.db import models
 from mptt.models import MPTTModel
 from mptt.models import TreeForeignKey
 
-# Create your models here.
+
+class ChatRoom(BaseModel):
+    name = models.CharField(max_length=255)
+    participants = models.ManyToManyField(User, related_name="chat_rooms")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("name",)
 
 
 class Chat(BaseModel, MPTTModel):
-    content = models.TextField(null=True)
+    object_type = models.CharField(max_length=255, choices=OBJECT_TYPE.CHOICES)
     object_id = models.UUIDField()
-    object_type = models.CharField(max_length=200, choices=OBJECT_TYPE.CHOICES)
+    content = models.TextField(null=True)
     sender = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="sent_chats"
-    )
-    receiver = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="received_chats",
-        null=True,
-        blank=True,
     )
 
     parent = TreeForeignKey(
@@ -30,10 +31,13 @@ class Chat(BaseModel, MPTTModel):
         blank=True,
         related_name="children",
     )
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="chats")
+
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class MPTTMeta:
         order_insertion_by = ["created_at"]
 
     @property
     def is_group_chat(self):
-        return self.object_type in [OBJECT_TYPE.HOSTEL, OBJECT_TYPE.ROOM]
+        return self.room is not None

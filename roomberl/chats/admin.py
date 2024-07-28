@@ -1,15 +1,18 @@
 from chats.models import Chat
+from chats.models import ChatRoom
 from django.contrib import admin
-from mptt.admin import MPTTModelAdmin
 
 # Register your models here.
 
 
-class CustomMPTTModelAdmin(MPTTModelAdmin):
+class ChatInline(admin.TabularInline):
+    model = Chat
+
+
+@admin.register(ChatRoom)
+class CustomMPTTModelAdmin(admin.ModelAdmin):
+    inlines = [ChatInline]
     list_display = [
-        "content",
+        "name",
     ]
-    mptt_level_indent = 30
-
-
-admin.site.register(Chat, CustomMPTTModelAdmin)
+    # mptt_level_indent = 30

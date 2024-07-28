@@ -1,94 +1,151 @@
-from account.models import User
 from chats.models import Chat
+from chats.models import ChatRoom
+from chats.serializers import ChatRoomSerializer
+from chats.serializers import ChatStartMessageSerializer
 from chats.serializers import CreateMessageSerializer
-from chats.serializers import GetChatsSerialiser
+from chats.serializers import GetChatsSerializer
 from core.dependency_injection import service_locator
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
-from rest_framework import serializers
-from rest_framework import viewsets
-from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView
+from rest_framework.generics import ListAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-
-from .models import OBJECT_TYPE
 
 
-class ChatApiView(viewsets.ModelViewSet):
+class ChatRoomsListApiView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Chat.objects.all()
+    serializer_class = ChatRoomSerializer
 
-    def get_serializer_class(self):
-        if self.action == "create":
-            return CreateMessageSerializer
-        return GetChatsSerialiser
+    def get_queryset(self):
+        user = self.request.user
+        return ChatRoom.objects.filter(participants=user).order_by("-created_at")
+
+
+class ChatRoomsUpdateApiView(UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChatRoomSerializer
+    queryset = ChatRoom.objects.order_by("-created_at")
+
+
+class ChatStartApiView(CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChatStartMessageSerializer
 
     def perform_create(self, serializer):
+        user = self.request.user
         object_type = self.request.data.get("object_type")
         object_id = self.request.data.get("object_id")
         parent_id = self.request.data.get("parent")
 
-        if not service_locator.chat_service.user_can_participate(
-            self.request.user, object_type, object_id
-        ):
-            raise PermissionDenied("You don't have permission to chat in this context.")
+        if not object_type or not object_id:
+            raise ValidationError("Object type and object ID must be provided.")
 
-        try:
-            parent = None
-            if parent_id:
+        room_name = f"{object_type}_{object_id}"
+        room = service_locator.chat_service.get_or_create_room(
+            user, room_name, object_type, object_id
+        )
+
+        if not service_locator.chat_service.user_can_participate(user, room):
+            raise PermissionDenied("You don't have permission to chat in this room.")
+
+        parent = None
+        if parent_id:
+            try:
                 parent = Chat.objects.get(id=parent_id)
+            except Chat.DoesNotExist:
+                raise ValidationError("Parent chat not found.")
+        serializer.is_valid(raise_exception=True)
+        serializer.save(
+            sender=user,
+            parent=parent,
+            room=room,
+        )
 
-            receiver = None
-            if object_type == OBJECT_TYPE.USER:
-                receiver = User.objects.get(id=object_id)
 
-            serializer.save(
-                sender=self.request.user,
-                receiver=receiver,
-                parent=parent,
-                object_type=object_type,
-                object_id=object_id,
-            )
-        except ObjectDoesNotExist as e:
-            print(f"ObjectDoesNotExist error: {str(e)}")
-            raise serializers.ValidationError(
-                "Invalid object_id, parent_id, or user not found."
-            )
-        except Exception as e:
-            print(f"Unexpected error in perform_create: {str(e)}")
-            raise serializers.ValidationError(
-                "An unexpected error occurred while creating the chat."
-            )
+class ChatCreateByRoomApiView(CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CreateMessageSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        room_id = self.kwargs.get("room_id")
+        parent_id = self.request.data.get("parent")
+
+        room = get_object_or_404(ChatRoom, id=room_id)
+
+        chat = parent = Chat.objects.filter(room=room_id).first()
+
+        if not chat:
+            raise ValidationError(code="chat", detail="chat with room not found")
+        serializer.validated_data.update(
+            {"object_id": chat.object_id, "object_type": chat.object_type}
+        )
+
+        if not service_locator.chat_service.user_can_participate(user, room):
+            raise PermissionDenied("You don't have permission to chat in this room.")
+
+        parent = None
+        if parent_id:
+            try:
+                parent = Chat.objects.get(id=parent_id)
+            except Chat.DoesNotExist:
+                raise ValidationError(code="Parent ID", detail="Parent chat not found.")
+
+        serializer.save(
+            sender=user,
+            parent=parent,
+            room=room,
+        )
+
+
+class ChatListApiView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GetChatsSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return Chat.objects.filter(
-            Q(sender=user)
-            | Q(receiver=user)
-            | Q(
-                object_id__in=[
-                    chat.object_id for chat in Chat.objects.filter(sender=user)
-                ]
-            )
-            | Q(
-                object_type__in=[
-                    chat.object_type for chat in Chat.objects.filter(sender=user)
-                ]
-            )
-        ).distinct()
+        room_id = self.kwargs.get("room_id")
 
-    @action(detail=False, methods=["get"])
-    def get_chats(self, request):
-        object_type = request.query_params.get("object_type")
-        object_id = request.query_params.get("object_id")
+        room = get_object_or_404(ChatRoom, id=room_id)
 
         if not service_locator.chat_service.user_can_participate(
-            request.user, object_type, object_id
+            self.request.user, room
         ):
             raise PermissionDenied("You don't have permission to view this chat.")
 
-        chats = Chat.objects.filter(object_type=object_type, object_id=object_id)
+        return Chat.objects.filter(room=room).order_by("created_at")
 
-        serializer = GetChatsSerialiser(chats, many=True)
-        return Response(serializer.data)
+
+class ChatRetrieveUpdateDestroyApiView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Chat.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return CreateMessageSerializer
+        return GetChatsSerializer
+
+    def get_queryset(self):
+        object_type = self.request.query_params.get("object_type")
+        object_id = self.request.query_params.get("object_id")
+
+        if not object_type or not object_id:
+            raise ValidationError(
+                code="object_type or object_id",
+                detail="Both object_type and object_id must be provided.",
+            )
+
+        room_name = f"{object_type}_{object_id}"
+        try:
+            room = ChatRoom.objects.get(name=room_name)
+        except ChatRoom.DoesNotExist:
+            raise ValidationError(code="room", detail="Room not found.")
+
+        if not service_locator.chat_service.user_can_participate(
+            self.request.user, room
+        ):
+            raise PermissionDenied("You don't have permission to view this chat.")
+
+        return Chat.objects.filter(room=room).order_by("created_at")
