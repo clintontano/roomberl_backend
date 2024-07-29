@@ -1,4 +1,5 @@
 # serializers.py
+from account.models import UserAdditionalDetail
 from account.serializers import SimpleUserAccountSerializer
 from chats.models import Chat
 from chats.models import ChatRoom
@@ -7,15 +8,46 @@ from rest_framework import serializers
 
 
 class ChatRoomSerializer(CreatedByMixin, serializers.ModelSerializer):
+    participants = serializers.SerializerMethodField()
+
     class Meta:
         model = ChatRoom
         fields = [
             "id",
             "name",
+            "participants",
         ]
         extra_kwargs = {
             "created_by": {"required": False},
         }
+
+    def get_participants(self, obj):
+        from django.db.models import F
+
+        return [
+            {
+                UserAdditionalDetail.objects.annotate(
+                    first_name=F("user__first_name"),
+                    last_name=F("user__last_name"),
+                    gender=F("user__gender"),
+                    email=F("user__email"),
+                    user_additional_detail_id=F("id"),
+                    mobile=F("user__mobile"),
+                ).values(
+                    "nickname",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "mobile",
+                    "other_name",
+                    "user_id",
+                    "user_additional_detail_id",
+                )
+                if hasattr(user, "useradditionaldetail")
+                else None
+            }
+            for user in obj.participants.all()
+        ]
 
 
 class ChatsSerializer(serializers.ModelSerializer):

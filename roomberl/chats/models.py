@@ -12,7 +12,7 @@ from mptt.models import TreeForeignKey
 
 class ChatRoom(BaseModel):
     name = models.CharField(max_length=255)
-    participants = models.ManyToManyField(User, related_name="chat_rooms")
+    participants = models.ManyToManyField(User, related_name="chat_rooms", blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
