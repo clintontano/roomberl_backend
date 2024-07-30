@@ -125,7 +125,7 @@ class CreateAccountAPIView(CreateAPIView):
         password = serializer.validated_data.get("password")
         user: User = serializer.save()
         user.set_password(password)
-        user.is_active = False
+        user.is_active = True
         user.save()
 
         user_serializer = SimpleUserAccountSerializer(user)
