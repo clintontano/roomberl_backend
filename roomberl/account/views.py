@@ -96,18 +96,38 @@ class UserAccountListCreateView(ListAPIView):
         return queryset.filter(hostel=hostel)
 
 
+# class CreateAccountAPIView(CreateAPIView):
+#     serializer_class = UserAccountSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         validated_data = serializer.validated_data
+#         password = validated_data.pop("password")
+#         email = validated_data.pop("email")
+
+#         user = User.objects.create_user(email, password, **validated_data)
+#         user_serializer = SimpleUserAccountSerializer(user)
+
+#         return Response(
+#             {"user": user_serializer.data, "token": get_tokens_for_user(user)},
+#             status=status.HTTP_201_CREATED,
+#         )
+
+
 class CreateAccountAPIView(CreateAPIView):
     serializer_class = UserAccountSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        password = serializer.validated_data.get("password")
+        user: User = serializer.save()
+        user.set_password(password)
+        user.is_active = False
+        user.save()
 
-        validated_data = serializer.validated_data
-        password = validated_data.pop("password")
-        email = validated_data.pop("email")
-
-        user = User.objects.create_user(email, password, **validated_data)
         user_serializer = SimpleUserAccountSerializer(user)
 
         return Response(
