@@ -297,5 +297,5 @@ class RoomPaymentApiView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = RoomPaymentSerializer
     queryset = RoomPayment.objects.order_by("updated_at")
-    filter_backends = DjangoFilterBackend
+    filter_backends = [DjangoFilterBackend]
     filterset_class = RoomPaymentFilter
