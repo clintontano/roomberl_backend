@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
+from literals.serializers import Hostel
 from rest_framework import serializers
 
 
@@ -93,6 +94,7 @@ class UserAccountSerializer(serializers.ModelSerializer):
 
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
     groups = GroupsSerializer(many=True)
+    hostel = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -104,10 +106,13 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "mobile",
             "address",
             "gender",
-            "hostel",
             "is_active",
             "groups",
+            "hostel",
         ]
+
+    def get_hostel(self, obj: User):
+        return Hostel.objects.filter(id=obj.hostel.id).values()
 
 
 class UserTokenSerializer(serializers.Serializer):
