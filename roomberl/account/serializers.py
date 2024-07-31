@@ -241,7 +241,7 @@ class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
         extra_kwargs = {
             "pk": {"read_only": True},
             "room_type": {"required": True},
-            "hostel": {"hostel": True},
+            "hostel": {"required": True},
         }
 
 
