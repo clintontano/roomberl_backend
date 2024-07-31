@@ -1,3 +1,4 @@
+from account.filters import RoomPaymentFilter
 from account.filters import UserFilter
 from account.models import CustomPermission
 from account.models import RoomPayment
@@ -296,3 +297,5 @@ class RoomPaymentApiView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = RoomPaymentSerializer
     queryset = RoomPayment.objects.order_by("updated_at")
+    filter_backends = DjangoFilterBackend
+    filterset_class = RoomPaymentFilter

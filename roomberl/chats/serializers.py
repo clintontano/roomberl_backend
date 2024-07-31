@@ -4,6 +4,8 @@ from account.serializers import SimpleUserAccountSerializer
 from chats.models import Chat
 from chats.models import ChatRoom
 from core.serializers import CreatedByMixin
+from django.db.models import OuterRef
+from django.db.models import Subquery
 from rest_framework import serializers
 
 
@@ -21,33 +23,28 @@ class ChatRoomSerializer(CreatedByMixin, serializers.ModelSerializer):
             "created_by": {"required": False},
         }
 
-    def get_participants(self, obj):
-        from django.db.models import F
+    def get_participants(self, obj: ChatRoom):
+        user_details = UserAdditionalDetail.objects.filter(user=OuterRef("pk")).values(
+            "id", "nickname", "other_name"
+        )
 
-        return [
-            {
-                UserAdditionalDetail.objects.annotate(
-                    first_name=F("user__first_name"),
-                    last_name=F("user__last_name"),
-                    gender=F("user__gender"),
-                    email=F("user__email"),
-                    user_additional_detail_id=F("id"),
-                    mobile=F("user__mobile"),
-                ).values(
-                    "nickname",
-                    "first_name",
-                    "last_name",
-                    "email",
-                    "mobile",
-                    "other_name",
-                    "user_id",
-                    "user_additional_detail_id",
-                )
-                if hasattr(user, "useradditionaldetail")
-                else None
-            }
-            for user in obj.participants.all()
-        ]
+        return list(
+            obj.participants.annotate(
+                user_additional_detail_id=Subquery(user_details.values("id")),
+                nickname=Subquery(user_details.values("nickname")),
+                other_name=Subquery(user_details.values("other_name")),
+            ).values(
+                "id",
+                "first_name",
+                "last_name",
+                "gender",
+                "email",
+                "mobile",
+                "user_additional_detail_id",
+                "nickname",
+                "other_name",
+            )
+        )
 
 
 class ChatsSerializer(serializers.ModelSerializer):

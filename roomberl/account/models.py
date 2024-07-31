@@ -163,7 +163,7 @@ class UserAdditionalDetail(BaseModel):
 class RoomPayment(BaseModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     room_type = models.ForeignKey("room.roomtype", on_delete=models.SET_NULL, null=True)
-
+    hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, null=True)
     amount_payed = models.DecimalField(max_digits=10, decimal_places=2)
     note = models.TextField(blank=True)
     first_receipt = models.ImageField(blank=True)
