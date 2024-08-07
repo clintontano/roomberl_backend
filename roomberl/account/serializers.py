@@ -275,6 +275,11 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This room type is fully occupied.")
         return value
 
+    def validate_room(self, value: UserAdditionalDetail):
+        if value.room.is_locked:
+            raise serializers.ValidationError("this room is locked")
+        return value
+
 
 class UserWithMatchesSerializer(serializers.ModelSerializer):
     user = SimpleUserAccountSerializer(read_only=True)

@@ -45,6 +45,7 @@ class Room(BaseModel):
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     room_amenities = models.ManyToManyField(RoomAmenity, blank=True)
     gender = models.CharField(max_length=20, choices=User.Gender.CHOICES, null=True)
+    is_locked = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f"{self.name} {self.room_type.name}"
