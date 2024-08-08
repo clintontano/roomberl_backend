@@ -109,6 +109,7 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "is_active",
             "groups",
             "hostel",
+            "image",
         ]
 
     def get_hostel(self, obj: User):
