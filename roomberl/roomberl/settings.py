@@ -135,7 +135,9 @@ REST_FRAMEWORK = {
         "djangorestframework_camel_case.parser.CamelCaseJSONParser",
     ),
     "EXCEPTION_HANDLER": "core.utils.exception_handler.custom_exception_handler",
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # "PAGE_SIZE": config("PAGE_SIZE", default=10),
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.CustomPageNumberPagination",
     "PAGE_SIZE": config("PAGE_SIZE", default=10),
 }
 
