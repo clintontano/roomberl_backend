@@ -1,7 +1,11 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics
 from rest_framework import serializers
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from room.filters import RoomFilter
 from room.filters import RoomTypeFilter
 from room.models import Room
@@ -50,3 +54,30 @@ class RoomApiView(viewsets.ModelViewSet):
         if hostel:
             queryset = queryset.filter(hostel=hostel)
         return queryset
+
+
+class DuplicateRoomApiView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+
+    def create(self, request, *args, **kwargs):
+        room_id = kwargs.get("pk")
+        quantity = kwargs.get("quantity")
+
+        original_room = get_object_or_404(Room, id=room_id)
+        room_data = original_room.__dict__.copy()
+
+        name = room_data.pop("name", None)
+
+        room_data.pop("_state", None)
+        room_data.pop("id", None)
+
+        duplicated_rooms = []
+        for count in range(quantity):
+            new_room = Room.objects.create(
+                **room_data, name=f"{name}-{count + 1}", created_by=self.request.user
+            )
+            duplicated_rooms.append(new_room)
+
+        serializer = self.get_serializer(duplicated_rooms, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
