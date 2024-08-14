@@ -16,7 +16,7 @@ router.register("rooms", RoomApiView, "rooms")
 
 urlpatterns = [
     path(
-        "duplcate/<uuid:pk>/<int:quantity>/",
+        "duplicate/<uuid:pk>/<int:quantity>/",
         DuplicateRoomApiView.as_view(),
         name="duplicate_room",
     ),
