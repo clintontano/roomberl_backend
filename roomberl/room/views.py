@@ -64,6 +64,11 @@ class DuplicateRoomApiView(generics.CreateAPIView):
         room_id = kwargs.get("pk")
         quantity = kwargs.get("quantity")
 
+        if quantity > 20:
+            raise serializers.ValidationError(
+                code="Invalid_quantity", detail="maximum quantity allowed is 20"
+            )
+
         original_room = get_object_or_404(Room, id=room_id)
         room_data = original_room.__dict__.copy()
 
