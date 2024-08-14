@@ -72,7 +72,6 @@ class DuplicateRoomApiView(generics.CreateAPIView):
         original_room = get_object_or_404(Room, id=room_id)
         room_data = original_room.__dict__.copy()
 
-        name = room_data.pop("name", None)
         code = room_data.pop("code", None)
 
         room_data.pop("_state", None)
@@ -82,7 +81,6 @@ class DuplicateRoomApiView(generics.CreateAPIView):
         for count in range(quantity):
             new_room = Room.objects.create(
                 **room_data,
-                name=f"{name}-{count + 1}",
                 code=f"{code}-{count + 1}",
                 created_by=self.request.user,
             )
