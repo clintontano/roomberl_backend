@@ -232,6 +232,7 @@ class UserPasswordResetView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         uid = request.query_params.get("uid", None)
         token = request.query_params.get("token", None)
+
         serializer = self.get_serializer(
             data=request.data, context={"uid": uid, "token": token}
         )

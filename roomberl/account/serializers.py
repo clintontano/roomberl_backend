@@ -3,7 +3,9 @@ from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
 from account.service import calculate_match_percentage
+from core.dependency_injection import service_locator
 from core.serializers import BaseToRepresentation
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.auth.password_validation import validate_password
@@ -11,8 +13,10 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils.encoding import DjangoUnicodeDecodeError
+from django.utils.encoding import force_bytes
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 from literals.serializers import Hostel
 from rest_framework import serializers
 
@@ -160,31 +164,43 @@ class UserChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
-class SendPasswordResetEmailSerializer(serializers.Serializer):
+class BaseEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
 
+
+class SendResetSerializer(BaseEmailSerializer):
+    pass
+
+
+class SendPasswordResetEmailSerializer(BaseEmailSerializer):
     class Meta:
         fields = ["email"]
 
     def validate(self, attrs):
         email = attrs.get("email")
-        request = self.context.get("request")
 
         if User.objects.filter(email=email).exists():
-            # user = User.objects.get(email=email)
-            # uid = urlsafe_base64_encode(force_bytes(user.id))
-            # token = PasswordResetTokenGenerator().make_token(user)
-            request.build_absolute_uri("/").rstrip("/")
-
-            # reset_password_link = (
-            #     reverse("account:reset-password") + f"?uid={uid}&token={token}"
-            # )
+            user: User = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
 
             # Send EMail
 
+            service_locator.core_service.send_email(
+                subject=f"Reset Your Password for {user.email}",
+                template_path="emails/password_reset_link.html",
+                template_context={
+                    "user": user,
+                    "password_reset_link": f"{settings.FRONTEND_URL}/set-new-password/?uid={uid}&token={token}",
+                    "body": "Click Following Link to Reset Your Password",
+                },
+                to_emails=[user.email],
+            )
             return attrs
         else:
-            raise serializers.ValidationError("You are not a Registered User")
+            raise serializers.ValidationError(
+                code="user_account", detail="user account does not exist"
+            )
 
 
 class UserPasswordResetSerializer(serializers.Serializer):
