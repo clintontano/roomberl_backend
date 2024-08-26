@@ -29,3 +29,7 @@ class Hostel(BaseLiterals):
         self.code = code
 
         return super().save()
+
+
+class HostelPaymentDetail(BaseLiterals):
+    hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE)

@@ -15,6 +15,8 @@ class RoomAmenitySerializer(serializers.ModelSerializer):
 
 
 class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
+    current_occupancy = serializers.CharField(read_only=True)
+
     class Meta:
         model = RoomType
         exclude = ["is_deleted"]
@@ -23,16 +25,6 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
             "pk": {"read_only": True},
             "hostel": {"required": True},
         }
-
-    def to_representation(self, instance: RoomType):
-        representation = super().to_representation(instance)
-
-        representation["current_occupancy"] = instance.current_occupancy()
-
-        representation["is_full"] = (
-            instance.current_occupancy() >= instance.num_occupancy
-        )
-        return representation
 
     def validate(self, data):
         name = data.get("name")

@@ -1,5 +1,6 @@
 from literals.api_docs import HOSTELS_SWAGGER_DOCS
 from literals.models import Hostel
+from literals.serializers import HostelSerializer
 from literals.serializers import ListAllLiteralsSerializer
 from literals.serializers import UnauthenticatedLiteralsSerializer
 from rest_framework import serializers
@@ -34,6 +35,7 @@ class HostelApiView(APIView):
             raise serializers.ValidationError(
                 code="hostel_code", detail="please provide hostel  code"
             )
-        queryset = Hostel.objects.filter(code=code).values()
+        queryset = Hostel.objects.filter(code=code)
 
-        return Response(queryset, status=status.HTTP_200_OK)
+        serializer = HostelSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

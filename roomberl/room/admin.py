@@ -21,7 +21,7 @@ class RoomTypeInline(admin.TabularInline):
 
 @admin.register(RoomType)
 class RoomTypeAdmin(admin.ModelAdmin):
-    list_display = ["name", "description", "price"]
+    list_display = ["name", "description", "price", "current_occupancy"]
 
 
 @admin.register(RoomAmenity)

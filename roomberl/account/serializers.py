@@ -235,7 +235,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
                 )
 
             user_id = smart_str(urlsafe_base64_decode(uid))
-            user = User.objects.get(id=user_id)
+            user: User = User.objects.get(id=user_id)
 
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise serializers.ValidationError("Token is not Valid or Expired")
@@ -277,23 +277,26 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
         representation["room_payments"] = self.get_room_payments(instance)
         return representation
 
-    def update(self, instance: UserAdditionalDetail, validated_data: dict):
-        from room.models import RoomType
+    def update(self, instance: UserAdditionalDetail, validated_data):
+        room_type = validated_data.get("room_type", instance.room_type)
+        if room_type:
+            total_rooms = room_type.room_set.count()
+            max_occupancy = total_rooms * room_type.num_occupancy
+            current_occupancy = (
+                RoomPayment.objects.filter(room_type=room_type, is_verified=True)
+                .exclude(id=instance.id)
+                .count()
+            )
 
-        room_type: RoomType = validated_data.get("room_type", instance.room_type)
-
-        if room_type and room_type.current_occupancy() >= room_type.num_occupancy:
-            raise serializers.ValidationError("This room type is fully occupied.")
+            if current_occupancy >= max_occupancy:
+                raise serializers.ValidationError(
+                    code="room_type_occupancy", detail="Room type fully occupied"
+                )
 
         return super().update(instance, validated_data)
 
-    def validate_room_type(self, value):
-        if value and value.current_occupancy() >= value.num_occupancy:
-            raise serializers.ValidationError("This room type is fully occupied.")
-        return value
-
     def validate_room(self, value: UserAdditionalDetail):
-        if value.room.is_locked:
+        if value.is_locked:
             raise serializers.ValidationError("this room is locked")
         return value
 
