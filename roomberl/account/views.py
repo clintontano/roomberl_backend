@@ -288,7 +288,9 @@ class ListMatchingUsersView(ListAPIView):
         return (
             UserAdditionalDetail.objects.exclude(user=user)
             .filter(
-                user__hostel=user.hostel, room_type=user.useradditionaldetail.room_type
+                user__hostel=user.hostel,
+                room_type=user.useradditionaldetail.room_type,
+                user__gender=user.gender,
             )
             .order_by("user")
         )
