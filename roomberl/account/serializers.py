@@ -300,7 +300,7 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
 
         if room:
             num_occupancy: UserAdditionalDetail = UserAdditionalDetail.objects.filter(
-                room=instance.room
+                room=room
             ).count()
 
             if num_occupancy >= instance.room_type.num_occupancy:
