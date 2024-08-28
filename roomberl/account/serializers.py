@@ -278,7 +278,9 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
         return representation
 
     def update(self, instance: UserAdditionalDetail, validated_data):
-        room_type = validated_data.get("room_type", instance.room_type)
+        room_type = validated_data.get("room_type", None)
+
+        room = validated_data.get("room", None)
         if room_type:
             total_rooms = room_type.room_set.count()
             max_occupancy = total_rooms * room_type.num_occupancy
@@ -293,12 +295,20 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
                     code="room_type_occupancy", detail="Room type fully occupied"
                 )
 
-        return super().update(instance, validated_data)
-
-    def validate_room(self, value: UserAdditionalDetail):
-        if value.is_locked:
+        if instance.room.is_locked:
             raise serializers.ValidationError("this room is locked")
-        return value
+
+        if room:
+            num_occupancy: UserAdditionalDetail = UserAdditionalDetail.objects.filter(
+                room=instance.room
+            ).count()
+
+            if num_occupancy >= instance.room_type.num_occupancy:
+                raise serializers.ValidationError(
+                    code="num_occupancy", detail="this room is fully occupied"
+                )
+
+        return super().update(instance, validated_data)
 
 
 class UserWithMatchesSerializer(serializers.ModelSerializer):
