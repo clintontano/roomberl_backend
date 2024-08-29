@@ -295,7 +295,7 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
                     code="room_type_occupancy", detail="Room type fully occupied"
                 )
 
-        if room.is_locked:
+        if room and room.is_locked:
             raise serializers.ValidationError("this room is locked")
 
         if room:
