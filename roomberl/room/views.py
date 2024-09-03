@@ -1,3 +1,5 @@
+from account.models import User
+from account.serializers import SimpleUserAccountSerializer
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
@@ -88,3 +90,12 @@ class DuplicateRoomApiView(generics.CreateAPIView):
 
         serializer = self.get_serializer(duplicated_rooms, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ViewRoomMembersApiView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SimpleUserAccountSerializer
+
+    def get_queryset(self):
+        room_id = self.kwargs.get("room_id")
+        return User.objects.filter(useradditionaldetail__room_id=room_id)

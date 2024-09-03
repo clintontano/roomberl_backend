@@ -4,6 +4,7 @@ from room.views import DuplicateRoomApiView
 from room.views import RoomAmenityApiView
 from room.views import RoomApiView
 from room.views import RoomTypeApiView
+from room.views import ViewRoomMembersApiView
 
 app_name = "room"
 
@@ -19,6 +20,11 @@ urlpatterns = [
         "duplicate/<uuid:pk>/<int:quantity>/",
         DuplicateRoomApiView.as_view(),
         name="duplicate_room",
+    ),
+    path(
+        "view-room-members/<uuid:room_id>/",
+        ViewRoomMembersApiView.as_view(),
+        name="view_room_members",
     ),
 ]
 
