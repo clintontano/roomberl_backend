@@ -21,8 +21,11 @@ class RoomPaymentInline(admin.TabularInline):
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin, ImportExportModelAdmin):
-    list_display = ["email", "first_name", "last_name", "hostel"]
-    list_editable = ["hostel"]
+    list_display = ["email", "first_name", "last_name", "gender", "hostel"]
+    list_editable = [
+        "hostel",
+        "gender",
+    ]
     add_fieldsets = (
         (
             None,
@@ -31,6 +34,7 @@ class CustomUserAdmin(UserAdmin, ImportExportModelAdmin):
                 "fields": (
                     "first_name",
                     "last_name",
+                    "gender",
                     "email",
                     "hostel",
                     "password1",

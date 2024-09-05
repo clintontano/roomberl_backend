@@ -1,3 +1,4 @@
+from account.api_docs import MATCHING_USERS_SWAGGER_DOCS
 from account.filters import RoomPaymentFilter
 from account.filters import UserFilter
 from account.models import CustomPermission
@@ -82,39 +83,11 @@ class UserAccountRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
 
 
 class UserAccountListCreateView(ListAPIView):
-    queryset = User.objects.all()
+    queryset = User.objects.order_by("gender")
     serializer_class = UserAccountSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        hostel = self.request.query_params.get("hostel")
-
-        if not hostel:
-            raise serializers.ValidationError({"hostel": "This parameter is required."})
-        return queryset.filter(hostel=hostel)
-
-
-# class CreateAccountAPIView(CreateAPIView):
-#     serializer_class = UserAccountSerializer
-
-#     def create(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-
-#         validated_data = serializer.validated_data
-#         password = validated_data.pop("password")
-#         email = validated_data.pop("email")
-
-#         user = User.objects.create_user(email, password, **validated_data)
-#         user_serializer = SimpleUserAccountSerializer(user)
-
-#         return Response(
-#             {"user": user_serializer.data, "token": get_tokens_for_user(user)},
-#             status=status.HTTP_201_CREATED,
-#         )
 
 
 class CreateAccountAPIView(CreateAPIView):
@@ -276,24 +249,33 @@ class UserAdditionalDetailView(viewsets.ModelViewSet):
 class ListMatchingUsersView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserWithMatchesSerializer
+    queryset = UserAdditionalDetail.objects.order_by("user")
+    filterset_fields = ["room", "room_type", "user"]
 
     def get_queryset(self):
+        queryset = super().get_queryset()
         user: User = self.request.user
+        hostel = self.request.query_params.get("hostel", None)
+
+        if not user.roompayment_set.filter(is_verified=True).exists():
+            return UserAdditionalDetail.objects.none()
 
         if not hasattr(user, "useradditionaldetail"):
             raise serializers.ValidationError(
                 code="user_additional", detail="User does not have additional details"
             )
 
-        return (
-            UserAdditionalDetail.objects.exclude(user=user)
-            .filter(
+        if hostel:
+            queryset = queryset.filter(
                 user__hostel=user.hostel,
                 room_type=user.useradditionaldetail.room_type,
-                user__gender=user.gender,
             )
-            .order_by("user")
-        )
+
+        return queryset.filter(user__gender=user.gender)
+
+    @MATCHING_USERS_SWAGGER_DOCS
+    def get(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class RoomPaymentApiView(viewsets.ModelViewSet):

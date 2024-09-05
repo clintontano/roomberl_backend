@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django_better_admin_arrayfield",
     "django_extensions",
     "mptt",
+    "django_filters",
     # LOCAL
     "account",
     "literals",
@@ -129,6 +130,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_RENDERER_CLASSES": ("core.utils.renders.CustomJsonRender",),
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PARSER_CLASSES": (
         "djangorestframework_camel_case.parser.CamelCaseFormParser",
         "djangorestframework_camel_case.parser.CamelCaseMultiPartParser",
