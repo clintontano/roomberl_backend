@@ -54,6 +54,7 @@ urlpatterns = [
         views.GetUserTokenByIDView.as_view(),
         name="get-user-token",
     ),
+    path("google-login/", views.GoogleLoginView.as_view(), name="google_login"),
 ]
 
 urlpatterns += router.urls

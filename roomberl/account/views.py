@@ -5,6 +5,7 @@ from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
+from account.serializers import ActivateUserAccountSerializer
 from account.serializers import GroupsSerializer
 from account.serializers import PermissionSerializer
 from account.serializers import RoomPaymentSerializer
@@ -25,6 +26,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from rest_framework import permissions
 from rest_framework import serializers
 from rest_framework import status
@@ -95,6 +98,7 @@ class CreateAccountAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
         password = serializer.validated_data.get("password")
         user: User = serializer.save()
@@ -284,3 +288,47 @@ class RoomPaymentApiView(viewsets.ModelViewSet):
     queryset = RoomPayment.objects.order_by("updated_at")
     filter_backends = [DjangoFilterBackend]
     filterset_class = RoomPaymentFilter
+
+
+class GoogleLoginView(CreateAPIView):
+    serializer_class = ActivateUserAccountSerializer
+
+    def create(self, request, *args, **kwargs):
+        google_jwt = request.data.get("token")
+        if not google_jwt:
+            return Response(
+                {"error": "Token is missing"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verify the Google token
+            idinfo = id_token.verify_oauth2_token(
+                google_jwt, requests.Request(), settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+            )
+
+            email = idinfo.get("email")
+            if not email:
+                return Response(
+                    {"error": "Email is missing in token"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            first_name = idinfo.get("given_name", idinfo.get("name", ""))
+            last_name = idinfo.get("family_name", "")
+
+            user, created = User.objects.get_or_create(
+                email=email, defaults={"first_name": first_name, "last_name": last_name}
+            )
+
+            tokens = get_tokens_for_user(user)
+            user_data = SimpleUserAccountSerializer(user).data
+
+            return Response(
+                {"token": tokens, "user": user_data},
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError:
+            return Response(
+                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            )

@@ -119,6 +119,8 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
         ]
 
     def get_hostel(self, obj: User):
+        if not obj.hostel:
+            return
         return Hostel.objects.filter(id=obj.hostel.id).values()
 
     def get_additional_details(self, obj: User):
@@ -351,3 +353,7 @@ class UserWithMatchesSerializer(serializers.ModelSerializer):
             logged_in_user_detail.responses, obj.responses
         )
         return f"{match_percentage:.1f}%"
+
+
+class ActivateUserAccountSerializer(serializers.Serializer):
+    token = serializers.CharField()

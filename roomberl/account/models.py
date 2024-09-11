@@ -118,8 +118,8 @@ class User(AbstractUser, PermissionsMixin):
     def full_name(self):
         return self.__str__
 
-    class Meta:
-        unique_together = ["email", "hostel"]
+    # class Meta:
+    #     unique_together = ["email", "hostel"]
 
 
 @receiver(post_save, sender=User)
