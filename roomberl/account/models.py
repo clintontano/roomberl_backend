@@ -100,7 +100,7 @@ class User(AbstractUser, PermissionsMixin):
         max_length=10, choices=Gender.CHOICES, default=Gender.OTHER
     )
     image = models.ImageField(upload_to="users", blank=True, null=True)
-    hostel = models.ForeignKey(Hostel, on_delete=models.PROTECT, null=True)
+    hostel = models.ForeignKey(Hostel, on_delete=models.PROTECT, null=True, blank=True)
 
     objects: UserManager = UserManager()
     USERNAME_FIELD = "email"
