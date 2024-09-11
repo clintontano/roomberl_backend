@@ -76,7 +76,7 @@ class UserAccountSerializer(serializers.ModelSerializer):
             "password": {"write_only": True},
             "password2": {"write_only": True, "required": True},
             "is_superuser": {"read_only": True},
-            "hostel": {"required": True},
+            "hostel": {"required": False},
         }
 
     def validate(self, attrs):
