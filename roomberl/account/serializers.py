@@ -100,6 +100,7 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
     groups = GroupsSerializer(many=True)
     hostel = serializers.SerializerMethodField()
     additional_details = serializers.SerializerMethodField()
+    room_payments = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -116,6 +117,7 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "hostel",
             "image",
             "additional_details",
+            "room_payments",
         ]
 
     def get_hostel(self, obj: User):
@@ -125,6 +127,11 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
 
     def get_additional_details(self, obj: User):
         return UserAdditionalDetail.objects.filter(user=obj).values()
+
+    def get_room_payments(self, obj):
+        room_paymens = RoomPayment.objects.filter(user=obj).order_by("user")
+
+        return RoomPaymentSerializer(room_paymens, many=True).data
 
 
 class UserTokenSerializer(serializers.Serializer):

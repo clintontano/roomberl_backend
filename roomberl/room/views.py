@@ -97,5 +97,5 @@ class ViewRoomMembersApiView(generics.ListAPIView):
     serializer_class = SimpleUserAccountSerializer
 
     def get_queryset(self):
-        room_id = self.kwargs.get("room_id")
+        room_id = get_object_or_404(Room, id=self.kwargs.get("room_id"))
         return User.objects.filter(useradditionaldetail__room_id=room_id)

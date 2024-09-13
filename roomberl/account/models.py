@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 from core.models import BaseModel
 from django.contrib.auth.base_user import BaseUserManager
@@ -7,7 +6,6 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
-from django.db import transaction
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -171,40 +169,40 @@ class RoomPayment(BaseModel):
     is_verified = models.BooleanField(default=False)
 
 
-@receiver(post_save, sender=RoomPayment)
-@transaction.atomic
-def send_payment_verification(sender, instance: RoomPayment, created, **kwargs):
-    from core.dependency_injection import service_locator
+# @receiver(post_save, sender=RoomPayment)
+# @transaction.atomic
+# def send_payment_verification(sender, instance: RoomPayment, created, **kwargs):
+#     from core.dependency_injection import service_locator
 
-    now = datetime.now()
-    hostel = instance.user.hostel
-    if created and hostel.owner_email:
-        service_locator.core_service.send_email(
-            subject="Payment Made",
-            template_path="emails/payment_created.html",
-            template_context={
-                "hostel_owner": hostel.owner_name,
-                "student": instance.user.full_name,
-                "room_type": instance.room_type.name,
-                "hostel": hostel.name,
-                "created_at": instance.created_at,
-                "amount_payed": instance.amount_payed,
-                "today": now.strftime("%A %B %d %I %p"),
-            },
-            to_emails=[hostel.owner_email],
-        )
+#     now = datetime.now()
+#     hostel = instance.user.hostel
+#     if created and hostel.owner_email:
+#         service_locator.core_service.send_email(
+#             subject="Payment Made",
+#             template_path="emails/payment_created.html",
+#             template_context={
+#                 "hostel_owner": hostel.owner_name,
+#                 "student": instance.user.full_name,
+#                 "room_type": instance.room_type.name,
+#                 "hostel": hostel.name,
+#                 "created_at": instance.created_at,
+#                 "amount_payed": instance.amount_payed,
+#                 "today": now.strftime("%A %B %d %I %p"),
+#             },
+#             to_emails=[hostel.owner_email],
+#         )
 
-    if instance.is_verified:
-        service_locator.core_service.send_email(
-            subject="Payment Verification",
-            template_path="emails/payment_verification.html",
-            template_context={
-                "student": instance.user.full_name,
-                "room_type": instance.room_type.name,
-                "hostel": hostel.name,
-                "created_at": instance.created_at,
-                "amount_payed": instance.amount_payed,
-                "today": now.strftime("%A %B %d %I %p"),
-            },
-            to_emails=[instance.user.email],
-        )
+#     if instance.is_verified:
+#         service_locator.core_service.send_email(
+#             subject="Payment Verification",
+#             template_path="emails/payment_verification.html",
+#             template_context={
+#                 "student": instance.user.full_name,
+#                 "room_type": instance.room_type.name,
+#                 "hostel": hostel.name,
+#                 "created_at": instance.created_at,
+#                 "amount_payed": instance.amount_payed,
+#                 "today": now.strftime("%A %B %d %I %p"),
+#             },
+#             to_emails=[instance.user.email],
+#         )
