@@ -1,3 +1,4 @@
+from core.serializers import BaseRoomBerlSerializer
 from core.serializers import BaseToRepresentation
 from core.serializers import CreatedByMixin
 from django.conf import settings
@@ -14,9 +15,7 @@ class RoomAmenitySerializer(serializers.ModelSerializer):
         exclude = ["is_deleted"]
 
 
-class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
-    current_occupancy = serializers.CharField(read_only=True)
-
+class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
         exclude = ["is_deleted"]
@@ -25,6 +24,17 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
             "pk": {"read_only": True},
             "hostel": {"required": True},
         }
+
+    def get_is_fully_occupied(self, obj: RoomType):
+        from account.models import RoomPayment
+
+        available_rooms = obj.room_set.filter(is_locked=False).count()
+        max_occupancy = available_rooms * obj.num_occupancy
+        current_occupancy = RoomPayment.objects.filter(
+            room_type=obj, is_verified=True
+        ).count()
+
+        return current_occupancy >= max_occupancy
 
     def validate(self, data):
         name = data.get("name")
@@ -36,6 +46,18 @@ class RoomTypeSerializer(BaseToRepresentation, serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"this room  type already exists in {hostel.name}"
             )
+
+        return data
+
+    def to_representation(self, instance: RoomType):
+        serializer = BaseRoomBerlSerializer(instance=instance)
+        serializer.Meta.model = instance.__class__
+        serializer.Meta.depth = 1
+
+        data = serializer.to_representation(instance)
+
+        data["is_fully_occupied"] = self.get_is_fully_occupied(instance)
+        data["current_occupancy"] = instance.current_occupancy
 
         return data
 

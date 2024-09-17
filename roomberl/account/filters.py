@@ -20,4 +20,5 @@ class RoomPaymentFilter(filters.FilterSet):
             "id",
             "hostel",
             "room_type",
+            "user",
         ]

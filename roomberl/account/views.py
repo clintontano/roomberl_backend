@@ -23,6 +23,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
@@ -85,7 +86,7 @@ class UserAccountRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         )
 
 
-class UserAccountListCreateView(ListAPIView):
+class UserAccountListCreateView(ListAPIView, CreateAPIView):
     queryset = User.objects.order_by("gender")
     serializer_class = UserAccountSerializer
     permission_classes = [IsAuthenticated]
@@ -140,6 +141,17 @@ class GetUserTokenByIDView(RetrieveAPIView):
         )
 
 
+class UsersWithoutRoomView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.order_by("hostel")
+    serializer_class = SimpleUserAccountSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
+
+    def get_queryset(self):
+        return super().get_queryset().filter(useradditionaldetail__room__isnull=False)
+
+
 class UserLoginView(CreateAPIView):
     """Login a user and generate a token."""
 
@@ -152,11 +164,14 @@ class UserLoginView(CreateAPIView):
         email = serializer.validated_data.get("email")
         password = serializer.validated_data.get("password")
 
-        user = authenticate(email=email, password=password)
-        existing_user = User.objects.filter(email=email).first()
+        user: User = authenticate(email=email, password=password)
+        self.request.user = user
+        existing_user: User = User.objects.filter(email=email).first()
 
         if user and existing_user:
-            user_serializer = SimpleUserAccountSerializer(user)
+            user_serializer = SimpleUserAccountSerializer(
+                user, context={"request": self.request}
+            )
 
             return Response(
                 {"token": get_tokens_for_user(user), "user": user_serializer.data},
@@ -241,19 +256,18 @@ class VerifyEmailView(APIView):
 class UserAdditionalDetailView(viewsets.ModelViewSet):
     serializer_class = UserAdditionalDetailSerializer
     queryset = UserAdditionalDetail.objects.order_by("-updated_at")
+    filterset_fields = ["room", "room_type", "user"]
 
     def get_object(self):
-        user = self.request.parser_context.get("kwargs").get("pk")
+        pk = self.request.parser_context.get("kwargs").get("pk")
 
-        user_additional_detail = UserAdditionalDetail.objects.filter(user=user).first()
-
-        return user_additional_detail
+        return get_object_or_404(UserAdditionalDetail, Q(user_id=pk) | Q(id=pk))
 
 
 class ListMatchingUsersView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserWithMatchesSerializer
-    queryset = UserAdditionalDetail.objects.order_by("user")
+    queryset = UserAdditionalDetail.objects.order_by("-updated_at")
     filterset_fields = ["room", "room_type", "user"]
 
     def get_queryset(self):

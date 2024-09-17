@@ -1,3 +1,4 @@
+from account.service import AccountService
 from chats.service import ChatService
 from core.service import CoreService
 from core.service import EmailService
@@ -6,6 +7,7 @@ from core.service import EmailService
 class SERVICE_NAMES:
     CoreService = "core_service"
     ChatService = "chat_service"
+    AccountService = "account_service"
 
 
 class ServiceLocator:
@@ -13,6 +15,7 @@ class ServiceLocator:
 
     core_service: CoreService
     chat_service: ChatService
+    account_service: AccountService
 
     def __init__(self):
         self._services = {}
@@ -38,3 +41,4 @@ service_locator = ServiceLocator()
 email_service = EmailService()
 service_locator.register(SERVICE_NAMES.CoreService, CoreService())
 service_locator.register(SERVICE_NAMES.ChatService, ChatService())
+service_locator.register(SERVICE_NAMES.AccountService, AccountService())

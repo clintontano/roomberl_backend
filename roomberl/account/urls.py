@@ -55,6 +55,11 @@ urlpatterns = [
         name="get-user-token",
     ),
     path("google-login/", views.GoogleLoginView.as_view(), name="google_login"),
+    path(
+        "users-without-room/",
+        views.UsersWithoutRoomView.as_view(),
+        name="users_with_no_room",
+    ),
 ]
 
 urlpatterns += router.urls

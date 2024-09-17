@@ -19,6 +19,7 @@ class RoomAmenity(BaseModel):
 
 class RoomType(BaseModel):
     room_set: "Room"
+
     hostel = models.ForeignKey(Hostel, on_delete=models.PROTECT, null=True)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)

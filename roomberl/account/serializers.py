@@ -2,8 +2,8 @@ from account.models import CustomPermission
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
-from account.service import calculate_match_percentage
 from core.dependency_injection import service_locator
+from core.serializers import BaseRoomBerlSerializer
 from core.serializers import BaseToRepresentation
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -12,6 +12,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.encoding import force_bytes
 from django.utils.encoding import smart_str
@@ -19,6 +20,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.http import urlsafe_base64_encode
 from literals.serializers import Hostel
 from rest_framework import serializers
+from rest_framework.request import Request
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -34,11 +36,9 @@ class PermissionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         content_type = ContentType.objects.get_for_model(CustomPermission).id
 
-        # Extract the name and codename from validated_data
         name = validated_data.get("name")
         codename = validated_data.get("name").lower()
 
-        # Create a custom permission using the provided name and codename
         custom_permission = Permission.objects.create(
             codename=codename.replace(" ", "_").lower(),
             name=name,
@@ -66,6 +66,7 @@ class GroupsSerializer(serializers.ModelSerializer):
 class UserAccountSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=False)
     groups_obj = GroupsSerializer(many=True, read_only=True, source="groups")
+    match_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -95,12 +96,21 @@ class UserAccountSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+    def get_match_percentage(self, obj: User):
+        if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
+            return "0%"
+        request: Request = self.context.get("request")
+        return service_locator.account_service.get_match_percentage(
+            obj.useradditionaldetail, request.user
+        )
+
 
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
     groups = GroupsSerializer(many=True)
     hostel = serializers.SerializerMethodField()
     additional_details = serializers.SerializerMethodField()
     room_payments = serializers.SerializerMethodField()
+    match_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -118,6 +128,7 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
             "image",
             "additional_details",
             "room_payments",
+            "match_percentage",
         ]
 
     def get_hostel(self, obj: User):
@@ -132,6 +143,16 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
         room_paymens = RoomPayment.objects.filter(user=obj).order_by("user")
 
         return RoomPaymentSerializer(room_paymens, many=True).data
+
+    def get_match_percentage(self, obj: User):
+        if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
+            return "0%"
+
+        request: Request = self.context.get("request")
+
+        return service_locator.account_service.get_match_percentage(
+            obj.useradditionaldetail, request.user
+        )
 
 
 class UserTokenSerializer(serializers.Serializer):
@@ -261,7 +282,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError("Token is not Valid or Expired")
 
 
-class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
+class RoomPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomPayment
 
@@ -275,8 +296,34 @@ class RoomPaymentSerializer(BaseToRepresentation, serializers.ModelSerializer):
             "hostel": {"required": True},
         }
 
+    def get_payment_status(self, obj: RoomPayment):
+        total_paid = (
+            RoomPayment.objects.filter(
+                user=obj.user, room_type=obj.room_type, is_verified=True
+            ).aggregate(total=Sum("amount_payed"))["total"]
+            or 0
+        )
 
-class UserAdditionalDetailSerializer(serializers.ModelSerializer):
+        if total_paid >= obj.room_type.price:
+            return "Full payment"
+        elif total_paid > 0:
+            return "Partial payment"
+        else:
+            return "No payment"
+
+    def to_representation(self, instance: RoomPayment):
+        serializer = BaseRoomBerlSerializer(instance=instance)
+        serializer.Meta.model = instance.__class__
+        serializer.Meta.depth = 1
+
+        data = serializer.to_representation(instance)
+
+        data["payment_status"] = self.get_payment_status(instance)
+
+        return data
+
+
+class UserAdditionalDetailSerializer(BaseToRepresentation, serializers.ModelSerializer):
     class Meta:
         model = UserAdditionalDetail
         exclude = ["is_deleted"]
@@ -296,7 +343,7 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
 
         room = validated_data.get("room", None)
         if room_type:
-            total_rooms = room_type.room_set.count()
+            total_rooms = room_type.room_set.filter(is_locked=False).count()
             max_occupancy = total_rooms * room_type.num_occupancy
             current_occupancy = (
                 RoomPayment.objects.filter(room_type=room_type, is_verified=True)
@@ -306,11 +353,13 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
 
             if current_occupancy >= max_occupancy:
                 raise serializers.ValidationError(
-                    code="room_type_occupancy", detail="Room type fully occupied"
+                    code="room_type_occupancy", detail="Room type is fully occupied"
                 )
 
         if room and room.is_locked:
-            raise serializers.ValidationError("this room is locked")
+            raise serializers.ValidationError(
+                code="room_locked", detail="this room is locked"
+            )
 
         if room:
             num_occupancy: UserAdditionalDetail = UserAdditionalDetail.objects.filter(
@@ -327,39 +376,17 @@ class UserAdditionalDetailSerializer(serializers.ModelSerializer):
 
 class UserWithMatchesSerializer(serializers.ModelSerializer):
     user = SimpleUserAccountSerializer(read_only=True)
-    match_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = UserAdditionalDetail
         fields = [
             "id",
             "user",
-            "match_percentage",
             "nickname",
             "course_of_study",
             "profile_picture",
             "date_of_admission",
         ]
-
-    def get_match_percentage(self, obj: UserAdditionalDetail):
-        request = self.context.get("request")
-        logged_in_user: User = request.user
-
-        logged_in_user_detail = UserAdditionalDetail.objects.filter(
-            user=logged_in_user
-        ).first()
-
-        if (
-            not logged_in_user_detail
-            or not logged_in_user_detail.responses
-            or not obj.responses
-        ):
-            return "0%"
-
-        match_percentage = calculate_match_percentage(
-            logged_in_user_detail.responses, obj.responses
-        )
-        return f"{match_percentage:.1f}%"
 
 
 class ActivateUserAccountSerializer(serializers.Serializer):
