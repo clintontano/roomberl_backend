@@ -38,7 +38,7 @@ class HostelPaymentDetailsSerializer(serializers.ModelSerializer):
 
 class HostelSerializer(serializers.ModelSerializer):
     payment_details = HostelPaymentDetailsSerializer(
-        read_only=True, many=True, source="hostelpaymentdetails_set"
+        read_only=True, many=True, source="hostelpaymentdetail_set"
     )
 
     class Meta:
