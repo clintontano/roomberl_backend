@@ -31,7 +31,7 @@ class RoomAmenitiesAdmin(admin.ModelAdmin):
 
 @admin.register(Room)
 class RoomAdminAdmin(admin.ModelAdmin):
-    list_display = ["name", "room_type", "name", "code", "description"]
+    list_display = ["name", "room_type", "name", "code", "gender", "description"]
     list_filter = [
         "room_type",
     ]
