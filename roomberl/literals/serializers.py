@@ -1,5 +1,6 @@
 from literals.models import Hostel
 from literals.models import HostelPaymentDetail
+from literals.models import Institution
 from rest_framework import serializers
 from room.models import RoomAmenity
 from room.models import RoomType
@@ -9,6 +10,7 @@ class ListAllLiteralsSerializer(serializers.Serializer):
     hostels = serializers.SerializerMethodField()
     room_types = serializers.SerializerMethodField()
     room_amenities = serializers.SerializerMethodField()
+    institutions = serializers.SerializerMethodField()
 
     def get_hostels(self, obj):
         return Hostel.objects.values()
@@ -18,6 +20,9 @@ class ListAllLiteralsSerializer(serializers.Serializer):
 
     def get_room_amenities(self, obj):
         return RoomAmenity.objects.values()
+
+    def get_institutions(self, obj):
+        return Institution.objects.values()
 
 
 class UnauthenticatedLiteralsSerializer(serializers.Serializer):

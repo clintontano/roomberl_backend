@@ -33,3 +33,7 @@ class Hostel(BaseLiterals):
 
 class HostelPaymentDetail(BaseLiterals):
     hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE)
+
+
+class Institution(BaseLiterals):
+    pass

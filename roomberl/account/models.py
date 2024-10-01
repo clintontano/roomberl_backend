@@ -13,6 +13,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import gettext as _
 from literals.models import Hostel
+from literals.models import Institution
 
 
 class UserManager(BaseUserManager):
@@ -138,16 +139,16 @@ class UserAdditionalDetail(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     other_name = models.CharField(max_length=200, null=True, blank=True)
     nickname = models.CharField(max_length=200, null=True, blank=True)
-    guardian_full_name = models.CharField(max_length=200)
+    guardian_full_name = models.CharField(max_length=200, null=True, blank=True)
     ghana_card_number = models.CharField(max_length=15, null=True, blank=True)
-    course_of_study = models.CharField(max_length=200)
+    course_of_study = models.CharField(max_length=200, null=True, blank=True)
     profile_picture = models.ImageField(null=True, blank=True)
     admission_picture = models.ImageField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     guardian_phone = models.CharField(max_length=15, blank=True, null=True)
     pictur_of_ghana_card = models.ImageField(blank=True, null=True)
-    student_id_number = models.CharField(max_length=20)
-    date_of_admission = models.DateField()
+    student_id_number = models.CharField(max_length=20, null=True, blank=True)
+    date_of_admission = models.DateField(null=True, blank=True)
     responses = models.JSONField(default=dict, blank=True)
     room = models.ForeignKey(
         "room.room", null=True, on_delete=models.SET_NULL, blank=True
@@ -155,6 +156,11 @@ class UserAdditionalDetail(BaseModel):
     room_type = models.ForeignKey(
         "room.roomtype", on_delete=models.SET_NULL, blank=True, null=True
     )
+
+    institution = models.ForeignKey(
+        Institution, on_delete=models.CASCADE, null=True, blank=True
+    )
+    course_level = models.CharField(max_length=200, blank=True, null=True)
 
 
 class RoomPayment(BaseModel):

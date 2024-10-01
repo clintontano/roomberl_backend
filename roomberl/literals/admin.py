@@ -1,6 +1,7 @@
 from django.contrib import admin
 from literals.models import Hostel
 from literals.models import HostelPaymentDetail
+from literals.models import Institution
 
 
 # Register your models here.
@@ -28,3 +29,6 @@ class HostelAdmin(admin.ModelAdmin):
         "owner_phone",
     ]
     readonly_fields = ["code"]
+
+
+admin.site.register([Institution])
