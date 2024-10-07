@@ -1,5 +1,6 @@
-from account.models import User
 from account.models import UserAdditionalDetail
+from crum import get_current_request
+from rest_framework.request import Request
 
 
 class AccountService:
@@ -39,11 +40,14 @@ class AccountService:
             return 0
         return (matching_answers / total_questions) * 100
 
-    def get_match_percentage(
-        self, obj: UserAdditionalDetail, logged_in_user: User
-    ) -> UserAdditionalDetail:
+    def get_match_percentage(self, obj: UserAdditionalDetail) -> UserAdditionalDetail:
+        request: Request = get_current_request()
+
+        if not request.user:
+            return "0%"
+
         logged_in_user_detail = UserAdditionalDetail.objects.filter(
-            user=logged_in_user
+            user=request.user
         ).first()
 
         if (

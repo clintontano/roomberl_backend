@@ -10,18 +10,28 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 
 
-class ChatRoomsListApiView(ListAPIView):
+class ChatRoomsListApiView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ChatRoomSerializer
+    queryset = ChatRoom.objects.all()
+    filterset_fields = ["object_type"]
 
     def get_queryset(self):
         user = self.request.user
-        return ChatRoom.objects.filter(participants=user).order_by("-created_at")
+
+        public_rooms = ChatRoom.objects.filter(object_type=ChatRoom.OBJECT_TYPE.PUBLIC)
+
+        user_rooms = ChatRoom.objects.filter(participants=user)
+
+        queryset = user_rooms | public_rooms
+
+        return queryset.order_by("-created_at")
 
 
 class ChatRoomsUpdateApiView(UpdateAPIView):
@@ -40,29 +50,21 @@ class ChatStartApiView(CreateAPIView):
         object_id = self.request.data.get("object_id")
         parent_id = self.request.data.get("parent")
 
-        if not object_type or not object_id:
-            raise ValidationError("Object type and object ID must be provided.")
+        chat_room = get_object_or_404(ChatRoom, id=self.request.data.get("room"))
 
-        room_name = service_locator.chat_service.generate_chat_room_name
-
-        room = service_locator.chat_service.get_or_create_room(
-            user, room_name, object_type, object_id
+        service_locator.chat_service.create_chat_participants(
+            user, chat_room, object_type, object_id
         )
 
-        if not service_locator.chat_service.user_can_participate(user, room):
+        if not service_locator.chat_service.user_can_participate(user, chat_room):
             raise PermissionDenied("You don't have permission to chat in this room.")
 
-        parent = None
-        if parent_id:
-            try:
-                parent = Chat.objects.get(id=parent_id)
-            except Chat.DoesNotExist:
-                raise ValidationError("Parent chat not found.")
         serializer.is_valid(raise_exception=True)
+
         serializer.save(
             sender=user,
-            parent=parent,
-            room=room,
+            parent_id=parent_id,
+            room=chat_room,
         )
 
 

@@ -43,7 +43,7 @@ class Room(BaseModel):
     room_type = models.ForeignKey(RoomType, on_delete=models.PROTECT, null=True)
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=200, null=True, blank=True)
-    floor_plan = models.ImageField(upload_to="floor_plan", null=True)
+    floor_plan = models.ImageField(upload_to="floor_plan", null=True, blank=True)
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     room_amenities = models.ManyToManyField(RoomAmenity, blank=True)

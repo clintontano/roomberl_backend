@@ -20,7 +20,6 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.http import urlsafe_base64_encode
 from literals.serializers import Hostel
 from rest_framework import serializers
-from rest_framework.request import Request
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -99,9 +98,8 @@ class UserAccountSerializer(serializers.ModelSerializer):
     def get_match_percentage(self, obj: User):
         if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
             return "0%"
-        request: Request = self.context.get("request")
         return service_locator.account_service.get_match_percentage(
-            obj.useradditionaldetail, request.user
+            obj.useradditionaldetail
         )
 
 
@@ -148,10 +146,8 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
         if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
             return "0%"
 
-        request: Request = self.context.get("request")
-
         return service_locator.account_service.get_match_percentage(
-            obj.useradditionaldetail, request.user
+            obj.useradditionaldetail
         )
 
 

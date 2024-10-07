@@ -1,9 +1,11 @@
 # serializers.py
+from account.models import User
 from account.models import UserAdditionalDetail
 from account.serializers import SimpleUserAccountSerializer
 from chats.models import Chat
 from chats.models import ChatRoom
 from core.serializers import CreatedByMixin
+from crum import get_current_user
 from django.db.models import OuterRef
 from django.db.models import Subquery
 from rest_framework import serializers
@@ -11,6 +13,7 @@ from rest_framework import serializers
 
 class ChatRoomSerializer(CreatedByMixin, serializers.ModelSerializer):
     participants = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatRoom
@@ -18,6 +21,9 @@ class ChatRoomSerializer(CreatedByMixin, serializers.ModelSerializer):
             "id",
             "name",
             "participants",
+            "created_by",
+            "object_type",
+            "display_name",
         ]
         extra_kwargs = {
             "created_by": {"required": False},
@@ -46,8 +52,23 @@ class ChatRoomSerializer(CreatedByMixin, serializers.ModelSerializer):
             )
         )
 
+    def get_display_name(self, obj: ChatRoom):
+        user: User = get_current_user()
 
-class ChatsSerializer(serializers.ModelSerializer):
+        if obj.object_type == Chat.OBJECT_TYPE.USER and user in obj.participants.all():
+            other_participants = obj.participants.exclude(id=user.id)
+            if other_participants.exists():
+                other_user: User = other_participants.first()
+                return other_user.get_full_name()
+
+        return obj.name
+
+
+class ChatReceiverMixin:
+    pass
+
+
+class ChatsSerializer(ChatReceiverMixin, serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     sender = SimpleUserAccountSerializer()
     room = ChatRoomSerializer()
@@ -62,17 +83,25 @@ class ChatsSerializer(serializers.ModelSerializer):
         return ChatsSerializer(obj.get_children(), many=True).data
 
 
-class ChatStartMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
+class ChatStartMessageSerializer(
+    CreatedByMixin, ChatReceiverMixin, serializers.ModelSerializer
+):
     sender = serializers.SerializerMethodField()
-    room = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ["content", "parent", "sender", "room", "object_type", "object_id"]
+        fields = [
+            "id",
+            "content",
+            "parent",
+            "sender",
+            "room",
+            "object_type",
+            "object_id",
+        ]
         read_only_fields = [
             "id",
             "sender",
-            "room",
         ]
         extra_kwargs = {
             "content": {"required": True},
@@ -87,15 +116,33 @@ class ChatStartMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
     def get_room(self, obj: Chat):
         return ChatRoomSerializer(obj.room).data
 
+    def to_representation(self, instance: Chat):
+        representation = super().to_representation(instance)
 
-class CreateMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
+        representation["room"] = self.get_room(instance)
+
+        return representation
+
+
+class CreateMessageSerializer(
+    CreatedByMixin, ChatReceiverMixin, serializers.ModelSerializer
+):
     sender = serializers.SerializerMethodField()
     object_type = serializers.SerializerMethodField()
     object_id = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ["content", "parent", "sender", "room", "object_type", "object_id"]
+        fields = [
+            "content",
+            "parent",
+            "sender",
+            "room",
+            "object_type",
+            "object_id",
+            "children",
+        ]
         read_only_fields = ["id", "sender", "room", "object_type", "object_id"]
         extra_kwargs = {
             "content": {"required": True},
@@ -113,8 +160,11 @@ class CreateMessageSerializer(CreatedByMixin, serializers.ModelSerializer):
     def get_sender(self, obj: Chat):
         return SimpleUserAccountSerializer(obj.sender).data
 
+    def get_children(self, obj: Chat):
+        return ChatsSerializer(obj.get_children(), many=True).data
 
-class GetChatsSerializer(serializers.ModelSerializer):
+
+class GetChatsSerializer(ChatReceiverMixin, serializers.ModelSerializer):
     room = ChatRoomSerializer()
     chats = serializers.SerializerMethodField()
 

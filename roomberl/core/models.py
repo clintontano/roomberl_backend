@@ -30,13 +30,15 @@ class OBJECT_TYPE:
     HOSTEL = "hostel"
     USER = "user"
     ROOM = "room"
+    PUBLIC = "public"
 
-    ALL = (HOSTEL, USER, ROOM)
+    ALL = (HOSTEL, USER, ROOM, PUBLIC)
 
     CHOICES = (
         (HOSTEL, ("Hostel")),
         (USER, ("User")),
         (ROOM, ("Room")),
+        (PUBLIC, ("Public")),
     )
 
 

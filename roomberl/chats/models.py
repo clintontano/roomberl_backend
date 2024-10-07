@@ -14,9 +14,9 @@ class ChatRoom(BaseModel):
     name = models.CharField(max_length=255)
     participants = models.ManyToManyField(User, related_name="chat_rooms", blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("name",)
+    object_type = models.CharField(
+        max_length=255, choices=OBJECT_TYPE.CHOICES, default=OBJECT_TYPE.PUBLIC
+    )
 
 
 class Chat(BaseModel, MPTTModel):

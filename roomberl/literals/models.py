@@ -23,6 +23,7 @@ class Hostel(BaseLiterals):
     location = models.CharField(max_length=200, null=True)
     website = models.URLField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="hostels")
+    dead_line = models.DateField(null=True)
 
     def save(self, *args, **kwargs):
         code = self.name.lower().replace(" ", "_")

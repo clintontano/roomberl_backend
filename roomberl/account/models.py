@@ -11,9 +11,11 @@ from django.db import transaction
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from literals.models import Hostel
 from literals.models import Institution
+from rest_framework.exceptions import ValidationError
 
 
 class UserManager(BaseUserManager):
@@ -164,6 +166,19 @@ class UserAdditionalDetail(BaseModel):
 
 
 class RoomPayment(BaseModel):
+    class STATUS:
+        VERIFIED = "verified"
+        REJECTED = "rejected"
+        NOT_VERIFIED = "not_verified"
+
+        ALL = (VERIFIED, REJECTED, NOT_VERIFIED)
+
+        CHOICES = (
+            (VERIFIED, ("Verified")),
+            (REJECTED, ("Rejected")),
+            (NOT_VERIFIED, ("Not Verified")),
+        )
+
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     room_type = models.ForeignKey("room.roomtype", on_delete=models.SET_NULL, null=True)
     hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, null=True)
@@ -172,6 +187,30 @@ class RoomPayment(BaseModel):
     first_receipt = models.ImageField(blank=True)
     second_receipt = models.ImageField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20, choices=STATUS.CHOICES, default=STATUS.NOT_VERIFIED
+    )
+
+    def save(self, *args, **kwargs):
+        if (
+            self.hostel
+            and self.hostel.dead_line
+            and self.hostel.dead_line < timezone.now().date()
+        ):
+            raise ValidationError(
+                code="deadline",
+                detail="Payment cannot be made after the deadline for this hostel.",
+            )
+
+        self.check_payment_status()
+        super().save(*args, **kwargs)
+
+    def check_payment_status(self):
+        if self.is_verified:
+            self.status = self.STATUS.VERIFIED
+
+        if not self.is_verified:
+            self.status = self.STATUS.NOT_VERIFIED
 
 
 @receiver(post_save, sender=RoomPayment)
