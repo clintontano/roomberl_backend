@@ -1,3 +1,4 @@
+from account.models import Pair
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
@@ -8,7 +9,7 @@ from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 
 
-admin.site.register(RoomPayment)
+admin.site.register([RoomPayment, Pair])
 
 
 class UserAdditionalDetailInine(admin.TabularInline):

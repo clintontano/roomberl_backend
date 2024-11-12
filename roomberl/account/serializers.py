@@ -1,4 +1,5 @@
 from account.models import CustomPermission
+from account.models import Pair
 from account.models import RoomPayment
 from account.models import User
 from account.models import UserAdditionalDetail
@@ -12,6 +13,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Sum
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.utils.encoding import force_bytes
@@ -62,47 +64,6 @@ class GroupsSerializer(serializers.ModelSerializer):
         }
 
 
-class UserAccountSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(write_only=True, required=False)
-    groups_obj = GroupsSerializer(many=True, read_only=True, source="groups")
-    match_percentage = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = "__all__"
-        read_only_fields = ["id", "is_superuser"]
-
-        extra_kwargs = {
-            "password": {"write_only": True},
-            "password2": {"write_only": True, "required": True},
-            "is_superuser": {"read_only": True},
-            "hostel": {"required": False},
-        }
-
-    def validate(self, attrs):
-        password = attrs.get("password")
-        password2 = self.initial_data.get("password_2")
-
-        if password and password2:
-            if password != password2:
-                raise serializers.ValidationError(
-                    {"password2": "Password and Confirm Password do not match"}
-                )
-            try:
-                validate_password(password)
-            except ValidationError as e:
-                raise serializers.ValidationError({"password": e.messages})
-
-        return super().validate(attrs)
-
-    def get_match_percentage(self, obj: User):
-        if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
-            return "0%"
-        return service_locator.account_service.get_match_percentage(
-            obj.useradditionaldetail
-        )
-
-
 class SimpleUserAccountSerializer(serializers.ModelSerializer):
     groups = GroupsSerializer(many=True)
     hostel = serializers.SerializerMethodField()
@@ -149,6 +110,101 @@ class SimpleUserAccountSerializer(serializers.ModelSerializer):
         return service_locator.account_service.get_match_percentage(
             obj.useradditionaldetail
         )
+
+
+class PairedUsersSerializer(serializers.ModelSerializer):
+    user_id = serializers.UUIDField(source="id")
+
+    class Meta:
+        model = User
+        fields = ["user_id", "email", "mobile", "address", "gender", "image", "hostel"]
+
+
+class PairsSerializer(serializers.ModelSerializer):
+    paired_users = PairedUsersSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Pair
+        fields = ["paired_users"]
+
+
+class UserAccountSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True, required=False)
+    groups_obj = GroupsSerializer(many=True, read_only=True, source="groups")
+    match_percentage = serializers.SerializerMethodField()
+
+    pairs = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(queryset=User.objects.all()),
+        write_only=True,
+        required=False,
+        help_text="comma separated list of user ids",
+    )
+
+    class Meta:
+        model = User
+        fields = "__all__"
+        read_only_fields = ["id", "is_superuser"]
+
+        extra_kwargs = {
+            "password": {"write_only": True},
+            "password2": {"write_only": True, "required": True},
+            "is_superuser": {"read_only": True},
+            "hostel": {"required": False},
+        }
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        password2 = self.initial_data.get("password_2")
+
+        if password and password2:
+            if password != password2:
+                raise serializers.ValidationError(
+                    {"password2": "Password and Confirm Password do not match"}
+                )
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                raise serializers.ValidationError({"password": e.messages})
+
+        return super().validate(attrs)
+
+    def get_match_percentage(self, obj: User):
+        if not hasattr(obj, "useradditionaldetail") or not obj.useradditionaldetail:
+            return "0%"
+        return service_locator.account_service.get_match_percentage(
+            obj.useradditionaldetail
+        )
+
+    def get_pairs(self, obj: User):
+        pairs = Pair.objects.filter(user=obj)
+        return PairsSerializer(pairs, many=True).data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        pairs = validated_data.pop("pairs", [])
+
+        instance = super().create(validated_data)
+
+        Pair.objects.handle_pairs(instance, pairs)
+
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        pairs = validated_data.pop("pairs", [])
+
+        instance = super().update(instance, validated_data)
+
+        Pair.objects.handle_pairs(instance, pairs)
+
+        return instance
+
+    def to_representation(self, instance: User):
+        representation = super().to_representation(instance)
+
+        representation["pairs"] = self.get_pairs(instance)
+
+        return representation
 
 
 class UserTokenSerializer(serializers.Serializer):

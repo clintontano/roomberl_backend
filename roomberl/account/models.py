@@ -250,3 +250,22 @@ def send_payment_verification(sender, instance: RoomPayment, created, **kwargs):
             },
             to_emails=[instance.user.email],
         )
+
+
+class PairsManager(models.Manager):
+    def handle_pairs(self, instance, pairs_data):
+        pair_instance, created = self.get_or_create(user=instance)
+        pair_instance: Pair
+
+        if pairs_data is not None:
+            pair_instance.paired_users.set(pairs_data)
+        else:
+            pair_instance.paired_users.clear()
+
+        return pair_instance
+
+
+class Pair(BaseModel):
+    objects: PairsManager = PairsManager()
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    paired_users = models.ManyToManyField(User, related_name="+")
