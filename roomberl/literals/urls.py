@@ -12,5 +12,6 @@ urlpatterns = [
         UnauthenticatedListLiteralsView.as_view(),
         name="Unauthenticated",
     ),
-    path("hostel/<str:code>/", HostelApiView.as_view(), name="hostels"),
+    path("hostel/<str:code>/", HostelApiView.as_view(), name="hostels_detail"),
+    path("hostels/", HostelApiView.as_view(), name="hostels_list"),
 ]

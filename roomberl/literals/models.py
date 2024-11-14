@@ -24,6 +24,9 @@ class Hostel(BaseLiterals):
     website = models.URLField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="hostels")
     dead_line = models.DateField(null=True)
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, editable=False
+    )
 
     def save(self, *args, **kwargs):
         code = self.name.lower().replace(" ", "_")

@@ -9,6 +9,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.db import transaction
 from django.db.models.query import QuerySet
+from django.db.models.signals import m2m_changed
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -119,7 +120,7 @@ class User(AbstractUser, PermissionsMixin):
 
     @property
     def full_name(self):
-        return self.__str__
+        return self.__str__()
 
 
 @receiver(post_save, sender=User)
@@ -259,6 +260,7 @@ class PairsManager(models.Manager):
 
         if pairs_data is not None:
             pair_instance.paired_users.set(pairs_data)
+
         else:
             pair_instance.paired_users.clear()
 
@@ -269,3 +271,37 @@ class Pair(BaseModel):
     objects: PairsManager = PairsManager()
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     paired_users = models.ManyToManyField(User, related_name="+")
+
+
+@receiver(m2m_changed, sender=Pair.paired_users.through)
+def send_pairing_email(
+    sender, instance: Pair, action, reverse, model: Pair, pk_set, **kwargs
+):
+    if action == "post_add":  # or action == 'post_remove':
+        users = model.objects.filter(pk__in=pk_set)
+
+        for user in users:
+            user: User
+
+            message = (
+                "Dear {}, you have been added as a new pair by {} on RoomBerl.".format(
+                    user.full_name, instance.user.full_name
+                )
+            )
+            send_pairing_notification(user, message)
+
+
+def send_pairing_notification(user: User, message: str):
+    from core.dependency_injection import service_locator
+
+    subject = "Your Pairing Status has Changed"
+
+    service_locator.core_service.send_email(
+        subject=subject,
+        template_path="emails/paired_users.html",
+        template_context={
+            "user": user,
+            "message": message,
+        },
+        to_emails=[user.email],
+    )

@@ -48,4 +48,4 @@ class HostelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hostel
-        fields = "__all__"
+        exclude = ["price", "is_deleted"]

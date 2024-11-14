@@ -27,6 +27,7 @@ class HostelAdmin(admin.ModelAdmin):
         "owner_name",
         "owner_email",
         "owner_phone",
+        "price",
     ]
     readonly_fields = ["code"]
 
