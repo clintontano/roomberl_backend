@@ -29,8 +29,14 @@ class UnauthenticatedListLiteralsView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class HostelApiCodeView(APIView):
+    def get(self, request, *args, **kwargs):
+        code = kwargs.get("code", None)
+        hostel = Hostel.objects.filter(code=code).values()
+        return Response(hostel, status=status.HTTP_200_OK)
+
+
 class HostelApiView(ListAPIView, RetrieveAPIView):
     serializer_class = HostelSerializer
     queryset = Hostel.objects.order_by("created_at")
-    lookup_field = "code"
     filterset_class = HostelFilter
